@@ -20,8 +20,6 @@ const Dashboard = () => {
     return <div className="loading-screen">Carregando dados do usuário...</div>;
   }
 
-  console.log(chat.messages)
-
   return (
     <div className="dashboard-wrapper">
       <Header

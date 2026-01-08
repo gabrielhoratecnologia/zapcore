@@ -16,16 +16,13 @@ export const useChat = (user) => {
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sendingError, setSendingError] = useState(null); // Estado para capturar erros
 
-  // 1. Buscar Conversas (Respeitando a Role e Tenant)
-
-  console.log(user);
-
+  // 1. Buscar Conversas
   useEffect(() => {
-    if (!user || !user.id) {
+    if (!user || (!user.id && !user.uid)) {
       setConversations([]);
       setLoading(true);
-      console.log("carregando useChat");
       return;
     }
 
@@ -34,18 +31,16 @@ export const useChat = (user) => {
 
     try {
       if (user.role === "admin") {
-        // Admin: Vê tudo do seu tenantId
         q = query(
           convRef,
           where("tenantId", "==", user.tenantId),
           orderBy("updatedAt", "desc")
         );
       } else {
-        // Usuário comum: Vê apenas o que lhe foi atribuído
         q = query(
           convRef,
           where("tenantId", "==", user.tenantId),
-          where("assignedTo", "==", user.uid),
+          where("assignedTo", "==", user.uid || user.id),
           orderBy("updatedAt", "desc")
         );
       }
@@ -61,10 +56,7 @@ export const useChat = (user) => {
           setLoading(false);
         },
         (error) => {
-          console.error(
-            "Erro ao buscar conversas (Verifique os índices do Firestore):",
-            error
-          );
+          console.error("Erro ao buscar conversas:", error);
           setLoading(false);
         }
       );
@@ -74,9 +66,9 @@ export const useChat = (user) => {
       console.error("Falha ao construir a query:", err);
       setLoading(false);
     }
-  }, [user]); // Re-executa quando o userData é preenchido no Dashboard
+  }, [user]);
 
-  // 2. Buscar Mensagens de uma conversa específica (Real-time)
+  // 2. Buscar Mensagens
   const getMessages = useCallback(
     (conversationId) => {
       if (!conversationId || !user?.tenantId) return;
@@ -102,29 +94,35 @@ export const useChat = (user) => {
         }
       );
     },
-    [user?.tenantId] // dependência REAL
+    [user?.tenantId]
   );
 
-  // 3. Enviar Mensagem para o Firestore
+  // 3. Enviar Mensagem
   const sendMessage = async (conversationId, text) => {
     if (!text.trim() || !user) return;
 
+    setSendingError(null); // Limpa erro antes de tentar enviar
+    const currentUserId = user.uid || user.id;
+
+    if (!currentUserId) {
+      setSendingError("Sessão do usuário inválida.");
+      return;
+    }
+
     try {
       const messageData = {
-        conversationId,
-        text,
+        conversationId: conversationId,
+        text: text,
         type: "text",
-        from: user.role === "admin" ? "admin" : "user", // Identifica o remetente
-        userId: user.uid,
-        tenantId: user.tenantId,
+        from: "agent",
+        userId: currentUserId,
+        tenantId: user.tenantId || "default",
         createdAt: serverTimestamp(),
         media: null,
       };
 
-      // 3.1. Salva a nova mensagem
       await addDoc(collection(db, "messages"), messageData);
 
-      // 3.2. Atualiza o resumo da conversa
       const convRef = doc(db, "conversations", conversationId);
       await updateDoc(convRef, {
         lastMessage: text,
@@ -132,8 +130,16 @@ export const useChat = (user) => {
       });
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
+      setSendingError("Falha ao enviar mensagem. Verifique sua conexão.");
     }
   };
 
-  return { conversations, messages, getMessages, sendMessage, loading };
+  return {
+    conversations,
+    messages,
+    getMessages,
+    sendMessage,
+    loading,
+    sendingError,
+  };
 };
