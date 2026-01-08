@@ -62,7 +62,8 @@
 }
 
 .msg-bubble p {
-    color: var(--color-text);
+  color: var(--color-text);
+  text-align: start;
 }
 
 .sent .msg-bubble {
