@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header/Header.jsx";
+import { useLogout } from "../../hooks/useLogout.jsx";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [userName, setUserName] = useState("Admin"); // Integrar com Firebase Auth depois
-
-  const handleLogout = () => {
-    console.log("Executando Logout...");
-    // auth.signOut();
-  };
+  const [userName, setUserName] = useState("Admin");
+  const { logout } = useLogout();
 
   return (
     <div className="dashboard-container">
       {/* Header Fixo */}
       <Header
         userName={userName}
-        onLogout={handleLogout}
+        onLogout={logout}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
       />
