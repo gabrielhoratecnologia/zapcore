@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { LoginForm } from "./pages/login/LoginForm.jsx";
+import { Painel } from "./pages/painel/Painel.jsx"
 import './App.css'
 
 function App() {
@@ -10,6 +11,9 @@ function App() {
 
       {/* Tela de login */}
       <Route path="/login" element={<LoginForm />} />
+
+      {/* Painel */}
+      <Route path="/painel" element={<Painel />} />
 
       {/* Opcional: página de 404 */}
       <Route path="*" element={<h1>Página não encontrada</h1>} />
