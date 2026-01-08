@@ -247,7 +247,8 @@
   width: 1px;
   height: 24px;
   background: #eee;
-  margin: 0 5px;
+  margin-right: 20px;
+  margin-left: 10px;
 }
 
 .user-name {
