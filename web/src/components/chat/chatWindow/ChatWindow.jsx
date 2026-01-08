@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSmile, FaPaperPlane } from "react-icons/fa";
+import { FaSmile, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
+import { useChatDetails } from "../../../hooks/useChatDetails.jsx"; // Importe o hook
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
@@ -13,26 +14,49 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
 
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const emojiPickerRef = useRef(null);
-  const messagesEndRef = useRef(null); // Ref para o scroll
+  const [showDetails, setShowDetails] = useState(false);
 
-  // Scroll automático para a última mensagem
+  // Estados locais para edição rápida antes de salvar
+  const [tempBrideName, setTempBrideName] = useState("");
+  const [tempWeddingDate, setTempWeddingDate] = useState("");
+  const [newNoteText, setNewNoteText] = useState("");
+
+  const emojiPickerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const detailsRef = useRef(null);
+
+  // Integração com o Hook do Firestore
+  const { details, updateGeneralDetails, addNote, loading } = useChatDetails(
+    chat?.id
+  );
+
+  // Sincroniza campos temporários quando os dados do Firebase mudam
+  useEffect(() => {
+    setTempBrideName(details.brideName);
+    setTempWeddingDate(details.weddingDate);
+  }, [details]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]); // Executa sempre que chegar ou enviar mensagem
+  }, [messages]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         emojiPickerRef.current &&
         !emojiPickerRef.current.contains(event.target)
-      ) {
+      )
         setShowEmojiPicker(false);
-      }
+      if (
+        detailsRef.current &&
+        !detailsRef.current.contains(event.target) &&
+        !event.target.closest(".info-trigger-btn")
+      )
+        setShowDetails(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -59,6 +83,19 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     }
   };
 
+  const handleSaveDetails = async () => {
+    // 1. Atualiza nome e data
+    await updateGeneralDetails(tempBrideName, tempWeddingDate);
+
+    // 2. Se houver texto na nota, adiciona ao array
+    if (newNoteText.trim()) {
+      await addNote(newNoteText);
+      setNewNoteText("");
+    }
+
+    setShowDetails(false);
+  };
+
   if (!chat)
     return (
       <div className="chat-placeholder">
@@ -76,9 +113,80 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           onError={(e) => (e.target.src = defaultAvatar)}
         />
         <div className="header-info">
-          <h4>{chat.name}</h4>
+          <h4>
+            {details.brideName || chat.name} {" "}
+            {details.weddingDate || chat.weddingDate}
+          </h4>
         </div>
+
+        <button
+          className="info-trigger-btn"
+          onClick={() => setShowDetails(!showDetails)}
+        >
+          <FaInfoCircle />
+        </button>
       </div>
+
+      {showDetails && (
+        <div className="details-popover anim-fade-in" ref={detailsRef}>
+          <h5>Detalhes do Evento</h5>
+
+          <div className="details-field">
+            <label>Nome do Contato</label>
+            <input
+              type="text"
+              value={tempBrideName}
+              onChange={(e) => setTempBrideName(e.target.value)}
+              placeholder="Nome da noiva..."
+            />
+          </div>
+
+          <div className="details-field">
+            <label>Data do Evento</label>
+            <input
+              type="date"
+              value={tempWeddingDate}
+              onChange={(e) => setTempWeddingDate(e.target.value)}
+            />
+          </div>
+
+          <div className="details-field">
+            <label>Histórico de Notas</label>
+            <div className="notes-history">
+              {details.notes.length > 0 ? (
+                // Mostra notas da mais recente para a mais antiga
+                [...details.notes].reverse().map((note) => (
+                  <div key={note.id} className="note-item">
+                    <small>{note.createdAt}:</small> {note.text}
+                  </div>
+                ))
+              ) : (
+                <p style={{ fontSize: "11px", color: "#999" }}>
+                  Nenhuma nota salva.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="details-field">
+            <label>Adicionar Nota</label>
+            <textarea
+              rows="2"
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              placeholder="Digite observações importantes..."
+            />
+          </div>
+
+          <button
+            className="save-details-btn"
+            onClick={handleSaveDetails}
+            disabled={loading}
+          >
+            {loading ? "Salvando..." : "Salvar Alterações"}
+          </button>
+        </div>
+      )}
 
       <div className="chat-messages-list">
         {messages.map((msg, idx) => (
@@ -99,7 +207,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
             </div>
           </div>
         ))}
-        {/* Âncora invisível para o scroll */}
         <div ref={messagesEndRef} />
       </div>
 
@@ -111,11 +218,9 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           >
             <EmojiPicker
               onEmojiClick={onEmojiClick}
-              autoFocusSearch={false}
-              theme="light"
               width="350px"
               height="450px"
-              searchPlaceholder="Procurar emoji..."
+              theme="light"
             />
           </div>
         )}
@@ -128,7 +233,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           >
             <FaSmile />
           </button>
-
           <form className="message-form" onSubmit={handleSendMessage}>
             <input
               type="text"
@@ -137,7 +241,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               onChange={(e) => setNewMessage(e.target.value)}
             />
           </form>
-
           <button
             className="send-circle-btn"
             onClick={handleSendMessage}

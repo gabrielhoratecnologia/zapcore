@@ -233,3 +233,91 @@
   text-align: center;
   padding: 20px;
 }
+
+/* MODAL DE DETALHES DO EVENTO */
+.details-popover {
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.details-popover h5 {
+  margin: 0 0 8px 0;
+  color: #374151;
+  font-size: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 8px;
+}
+
+.details-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text);
+}
+
+.details-field label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.details-field input,
+.details-field textarea {
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #dbdfe4;
+  color: var(--color-text);
+}
+
+.notes-history {
+  max-height: 120px;
+  overflow-y: auto;
+  background: #f9fafb;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid #edf2f7;
+}
+
+.note-item {
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.note-item:last-child {
+  border: none;
+}
+
+.save-details-btn {
+  background-color: #00a884;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.info-trigger-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 20px;
+  cursor: pointer;
+  margin-left: auto; /* Empurra para a direita */
+  display: flex;
+  align-items: center;
+}
