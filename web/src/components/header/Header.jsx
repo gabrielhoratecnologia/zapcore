@@ -41,16 +41,6 @@ const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
 
         {/* DIREITA (AÇÕES) */}
         <div className="header-right desktop-only">
-          <button
-            className={`status-toggle-btn ${
-              isOnline ? "is-online" : "is-offline"
-            }`}
-            onClick={() => setIsOnline(!isOnline)}
-          >
-            <FaPowerOff size={12} />
-            {isOnline ? "ONLINE" : "OFFLINE"}
-          </button>
-
           <button className="icon-button" aria-label="Notificações">
             <FaBell size={18} />
             <span className="notification-badge"></span>
@@ -93,17 +83,6 @@ const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
             </div>
           </div>
           <div className="drawer-body">
-            <button
-              className={`drawer-action-btn ${
-                isOnline ? "active-online" : "active-offline"
-              }`}
-              onClick={() => {
-                setIsOnline(!isOnline);
-                toggleMenu();
-              }}
-            >
-              <FaPowerOff /> Ficar {isOnline ? "Offline" : "Online"}
-            </button>
             <button className="drawer-action-btn">
               <FaBell /> Notificações
             </button>
