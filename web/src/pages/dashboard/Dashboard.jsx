@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from "react";
 import Header from "../../components/header/Header.jsx";
 import { useLogout } from "../../hooks/useLogout.jsx";
+import { useAuth } from "../../hooks/useAuth.jsx";
+import { useUser } from "../../hooks/useUser.jsx";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [userName, setUserName] = useState("Admin");
+  const { uid } = useAuth();
+  const { userData, loading } = useUser(uid);
   const { logout } = useLogout();
+
+  console.log("entrou no DASH")
 
   return (
     <div className="dashboard-container">
       {/* Header Fixo */}
       <Header
-        userName={userName}
+        userName={userData?.name}
         onLogout={logout}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

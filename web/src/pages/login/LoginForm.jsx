@@ -44,7 +44,7 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/painel");
+      navigate("/dashboard");
     }
   }, [authLoading, user, navigate]);
 

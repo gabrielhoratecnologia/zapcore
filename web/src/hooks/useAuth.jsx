@@ -7,23 +7,18 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged é a função que verifica o estado de autenticação
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          setUser(currentUser);
-        } catch (error) {
-          console.error("Erro ao carregar claims:", error);
-          setUser(currentUser);
-        }
-      } else {
-        setUser(null);
-      }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser || null);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return { user, loading };
+  return {
+    user,
+    uid: user?.uid || null,
+    isAuthenticated: !!user,
+    loading,
+  };
 }

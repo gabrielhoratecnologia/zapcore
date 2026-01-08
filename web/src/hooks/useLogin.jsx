@@ -26,7 +26,7 @@ export function useLogin() {
       };
 
       console.log("Usuário Logado", user);
-      navigate("/painel");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Erro no login", error.message);
 
