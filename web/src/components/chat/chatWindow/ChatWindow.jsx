@@ -14,6 +14,16 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const emojiPickerRef = useRef(null);
+  const messagesEndRef = useRef(null); // Ref para o scroll
+
+  // Scroll automático para a última mensagem
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]); // Executa sempre que chegar ou enviar mensagem
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -81,16 +91,16 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
             <div className="msg-bubble">
               <p>{msg.text}</p>
               <span className="msg-time">
-                {msg.createdAt
-                  ?.toDate()
-                  .toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                {msg.createdAt?.toDate().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </span>
             </div>
           </div>
         ))}
+        {/* Âncora invisível para o scroll */}
+        <div ref={messagesEndRef} />
       </div>
 
       <footer className="chat-footer">

@@ -38,21 +38,38 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: #e5ddd5; /* Fundo estilo WhatsApp */
+  background-color: #e5ddd5;
+  scroll-behavior: smooth;
+}
+
+/* ANIMAÇÃO DE ENTRADA DAS MENSAGENS */
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .msg-row {
   display: flex;
   width: 100%;
   margin-bottom: 2px;
+  /* Aplica a animação */
+  animation: messageAppear 0.3s cubic-bezier(0.1, 0.5, 0.5, 1) both;
 }
 
 .msg-row.sent {
   justify-content: flex-end;
+  transform-origin: right bottom;
 }
 
 .msg-row.received {
   justify-content: flex-start;
+  transform-origin: left bottom;
 }
 
 .msg-bubble {
@@ -64,7 +81,7 @@
 }
 
 .msg-bubble p {
-  color: #000000; /* Texto da bolha em preto */
+  color: #000000;
   text-align: start;
   margin: 0;
 }
@@ -108,7 +125,6 @@
   max-width: 1000px;
 }
 
-/* BOTÃO DE EMOJI ANIMADO */
 .emoji-trigger-btn {
   background: none;
   border: none;
@@ -122,11 +138,10 @@
 
 .emoji-trigger-btn:hover,
 .emoji-trigger-btn.active {
-  color: #ffbc38; /* Amarelo clássico de emoji */
+  color: #ffbc38;
   transform: scale(1.2);
 }
 
-/* FORMULÁRIO E INPUT */
 .message-form {
   flex: 1;
 }
@@ -138,20 +153,18 @@
   font-size: 16px;
   padding: 10px 0;
   background: transparent;
-  color: #000000; /* TEXTO DO INPUT EM PRETO */
+  color: #000000;
 }
 
 .message-form input::placeholder {
   color: #9ca3af;
 }
 
-/* BOTÃO ENVIAR CIRCULAR */
-/* Ajuste no botão de enviar */
 .send-circle-btn {
   background-color: #00a884;
   border: none;
   color: white;
-  width: 45px; /* Aumentei levemente para melhor ergonomia */
+  width: 45px;
   height: 45px;
   border-radius: 50%;
   display: flex;
@@ -160,14 +173,13 @@
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  padding: 0; /* Garante que o padding não desloque o ícone */
+  padding: 0;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Efeito de rotação leve no ícone ao passar o mouse (opcional) */
 .send-circle-btn svg {
   font-size: 18px;
-  margin-right: 3px; /* Pequeno ajuste ótico para o ícone de avião parecer centralizado */
+  margin-right: 3px;
 }
 
 .send-circle-btn:hover:not(:disabled) {
@@ -179,14 +191,12 @@
   transform: scale(0.92);
 }
 
-/* Estilo para quando o input está vazio (opcional: mudar a cor do ícone em vez do fundo) */
 .send-circle-btn:disabled {
   background-color: #cbd5e1;
   color: #f8fafc;
   cursor: not-allowed;
 }
 
-/* CAIXA DO PICKER DE EMOJI */
 .emoji-picker-wrapper {
   position: absolute;
   bottom: 85px;
@@ -197,7 +207,6 @@
   overflow: hidden;
 }
 
-/* ANIMAÇÃO DE APARECIMENTO */
 .anim-fade-in {
   animation: emojiAppear 0.3s ease-out;
 }
@@ -213,7 +222,6 @@
   }
 }
 
-/* PLACEHOLDER QUANDO NÃO HÁ CHAT */
 .chat-placeholder {
   display: flex;
   flex-direction: column;
