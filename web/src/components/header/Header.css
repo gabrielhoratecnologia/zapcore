@@ -1,53 +1,83 @@
-/* Importação da Poppins caso não esteja no projeto */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+
+:root {
+  --color-primary: #3fbde4;
+  --color-secondary: #2e95b4;
+  --color-text: #1a1a1a;
+  --color-online: #10b981;
+  --color-danger: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .main-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 70px; /* Levemente maior para acomodar a Poppins com respiro */
   background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
+  border-bottom: 1px solid #f0f0f0;
   z-index: 1000;
-  font-family: "Poppins", sans-serif; /* Aplicado globalmente no header */
+  font-family: "Poppins", sans-serif;
 }
 
-/* Esquerda: Logo */
+.header-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+/* LOGO - ANIMAÇÃO DE ESCALA */
 .logo-container {
   display: flex;
   flex-direction: column;
   line-height: 1.1;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logo-container:hover {
+  transform: scale(1.05);
 }
 
 .logo-brand {
-  font-size: 1.4rem;
-  font-weight: 600; /* Mais peso */
-  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
   letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+
+.logo-container:hover .logo-brand {
+  color: var(--color-primary);
 }
 
 .logo-subtext {
-  font-size: 0.85rem;
-  font-weight: 300; /* Mais fino */
-  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: #888;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-/* Centro: Busca */
+/* BUSCA */
 .header-center {
-  flex: 1;
-  max-width: 400px;
-  margin: 0 40px;
+  width: 100%;
+  padding-right: 30px;
+  order: 3;
 }
 
 .search-container {
   position: relative;
+  width: 100%;
 }
 
 .search-icon {
@@ -55,55 +85,59 @@
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: #a0a0a0;
+  transition: color 0.3s ease;
 }
 
 .search-container input {
   width: 100%;
-  background-color: #f3f4f6;
+  background-color: #f5f7fa;
   border: 1px solid transparent;
-  border-radius: 8px; /* Menos arredondado para um visual moderno */
-  padding: 10px 16px 10px 42px;
+  border-radius: 10px;
+  padding: 12px 16px 12px 42px;
+  font-size: 14px;
   outline: none;
   font-family: "Poppins", sans-serif;
-  font-size: 14px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
 }
 
 .search-container input:focus {
-  background-color: #ffffff;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background-color: #fff;
+  border-color: var(--color-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-
-/* Direita: Organização */
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 18px; /* Espaçamento fixo entre os elementos */
-  flex-shrink: 0; /* Impede que a direita seja espremida */
+.search-container input:focus + .search-icon {
+  color: var(--color-primary);
 }
 
-/* Botão de Alternar Status */
+/* BOTÃO STATUS - TRANSIÇÃO SUAVE */
 .status-toggle-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
-  font-family: "Poppins", sans-serif;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #eee;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  background-color: #fff;
+  background: white;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.status-toggle-btn:focus {
+  outline: none;
+}
+
+.status-toggle-btn:active {
+  transform: scale(0.95);
 }
 
 .status-toggle-btn.is-online {
-  color: #10b981;
-  border-color: #10b981;
+  color: var(--color-online);
+  border-color: var(--color-online);
 }
 
 .status-toggle-btn.is-online:hover {
@@ -112,54 +146,114 @@
 
 .status-toggle-btn.is-offline {
   color: #6b7280;
-  border-color: #d1d5db;
+  border-color: #eee;
 }
 
 .status-toggle-btn.is-offline:hover {
   background-color: #f3f4f6;
 }
 
-/* Notificação */
+/* NOTIFICAÇÃO - ANIMAÇÃO DE PULSO */
 .icon-button {
-  position: relative;
   background: none;
   border: none;
-  color: #6b7280;
-  cursor: pointer;
+  color: #4b5563;
+  position: relative;
   display: flex;
-  align-items: center;
-  padding: 4px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.icon-button:focus {
+  outline: none;
+}
+
+.icon-button:hover {
+  color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
 .notification-badge {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 6px;
+  right: 15px;
   width: 8px;
   height: 8px;
-  background-color: #ef4444;
+  background: var(--color-danger);
   border-radius: 50%;
-  border: 2px solid #ffffff;
+  border: 2px solid white;
+  animation: pulse-red 2s infinite;
 }
 
-/* Divisor Vertical */
-.divider {
-  width: 1px;
-  height: 24px;
-  background-color: #e5e7eb;
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
 }
 
-/* Perfil e Nome */
+/* LOGOUT - ANIMAÇÃO DE SAÍDA */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.logout-btn:focus {
+  outline: none;
+}
+
+.logout-btn:hover {
+  color: var(--color-danger);
+  transform: translateX(3px); /* Movimento para a direita */
+}
+
+/* PERFIL E STATUS DOT */
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
-.user-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.status-dot.online {
+  background: var(--color-online);
+  box-shadow: 0 0 4px var(--color-online);
+}
+
+.status-dot.offline {
+  background: #d1d5db;
+}
+
+/* CONFIGURAÇÕES GERAIS */
+.divider {
+  width: 1px;
+  height: 24px;
+  background: #eee;
+  margin: 0 5px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
 }
 
 .status-row {
@@ -167,14 +261,6 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  line-height: 1;
-}
-
-.user-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
-  white-space: nowrap; /* Impede que o nome quebre em duas linhas */
 }
 
 .user-role {
@@ -182,40 +268,117 @@
   color: #9ca3af;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-.status-dot.online {
-  background-color: #10b981;
-}
-.status-dot.offline {
-  background-color: #9ca3af;
-}
-
-/* Botão Sair */
-.logout-btn {
+/* MOBILE DRAWER & MEDIA QUERIES */
+.mobile-menu-btn {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #1a1a1a;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.2s;
 }
 
-.logout-btn:hover {
-  color: #ef4444;
-  background-color: #fee2e2;
+.mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  visibility: hidden;
 }
-/* Responsividade */
-@media (max-width: 768px) {
-  .logo-subtext,
+
+.mobile-drawer.open {
+  visibility: visible;
+}
+
+.drawer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.drawer-content {
+  position: absolute;
+  right: -280px;
+  top: 0;
+  width: 280px;
+  height: 100%;
+  background: #fff;
+  transition: 0.3s ease-in-out;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-drawer.open .drawer-content {
+  right: 0;
+}
+
+.drawer-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #f8fafc;
+  font-family: "Poppins";
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.2s;
+}
+
+.active-online {
+  background: #ecfdf5;
+  color: #10b981;
+}
+.active-offline {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.logout-action {
+  background: #fff1f2;
+  color: #e11d48;
+  margin-top: auto;
+}
+
+/* DESKTOP LAYOUT */
+@media (min-width: 769px) {
+  .main-header {
+    height: 75px;
+  }
+  .header-container {
+    flex-wrap: nowrap;
+    padding: 0 40px;
+    height: 100%;
+  }
+  .header-left {
+    flex: 1;
+    order: 1;
+    display: flex;
+    justify-content: flex-start;
+  }
   .header-center {
+    flex: 2;
+    order: 2;
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .search-container {
+    max-width: 450px;
+  }
+  .header-right {
+    flex: 1;
+    order: 3;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .mobile-menu-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
     display: none;
   }
 }

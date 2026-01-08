@@ -1,67 +1,120 @@
 import React, { useState } from "react";
-import { FaSignOutAlt, FaBell, FaSearch, FaPowerOff } from "react-icons/fa";
+import {
+  FaSignOutAlt,
+  FaBell,
+  FaSearch,
+  FaPowerOff,
+  FaBars,
+  FaTimes,
+} from "react-icons/fa";
 import "./Header.css";
 
 const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
   const [isOnline, setIsOnline] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
     <header className="main-header">
-      {/* Esquerda: Logo (Mantido conforme aprovado) */}
-      <div className="header-left">
-        <div className="logo-container">
-          <span className="logo-brand">Seravalli</span>
-          <span className="logo-subtext">Atendimento</span>
+      <div className="header-container">
+        {/* ESQUERDA: LOGO COM ANIMAÇÃO */}
+        <div className="header-left">
+          <div className="logo-container">
+            <span className="logo-brand">Seravalli</span>
+            <span className="logo-subtext">Atendimento</span>
+          </div>
         </div>
+
+        {/* CENTRO: BUSCA */}
+        <div className="header-center">
+          <div className="search-container">
+            <FaSearch className="search-icon" size={14} />
+            <input
+              type="text"
+              placeholder="Buscar noiva, número ou data..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* DIREITA (AÇÕES) */}
+        <div className="header-right desktop-only">
+          <button
+            className={`status-toggle-btn ${
+              isOnline ? "is-online" : "is-offline"
+            }`}
+            onClick={() => setIsOnline(!isOnline)}
+          >
+            <FaPowerOff size={12} />
+            {isOnline ? "ONLINE" : "OFFLINE"}
+          </button>
+
+          <button className="icon-button" aria-label="Notificações">
+            <FaBell size={18} />
+            <span className="notification-badge"></span>
+          </button>
+
+          <div className="divider"></div>
+
+          <div className="user-profile">
+            <div className="user-info">
+              <span className="user-name">{userName || "Usuário"}</span>
+              <div className="status-row">
+                <span className="user-role">Administrador</span>
+                <span
+                  className={`status-dot ${isOnline ? "online" : "offline"}`}
+                ></span>
+              </div>
+            </div>
+            <button onClick={onLogout} className="logout-btn" title="Sair">
+              <FaSignOutAlt size={18} />
+            </button>
+          </div>
+        </div>
+
+        <button className="mobile-menu-btn" onClick={toggleMenu}>
+          {isMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+        </button>
       </div>
 
-      {/* Centro: Busca (Mantido conforme aprovado) */}
-      <div className="header-center">
-        <div className="search-container">
-          <FaSearch className="search-icon" size={16} />
-          <input
-            type="text"
-            placeholder="Buscar noiva, número ou data..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Direita: Ações e Perfil Ajustados */}
-      <div className="header-right">
-        {/* Botão de Status (Novo) */}
-        <button
-          className={`status-toggle-btn ${
-            isOnline ? "is-online" : "is-offline"
-          }`}
-          onClick={() => setIsOnline(!isOnline)}
-        >
-          <FaPowerOff size={12} />
-          {isOnline ? "ONLINE" : "OFFLINE"}
-        </button>
-
-        <button className="icon-button notification-btn">
-          <FaBell size={20} />
-          <span className="notification-badge"></span>
-        </button>
-
-        <div className="divider"></div>
-
-        <div className="user-profile">
-          <div className="user-info">
-            <span className="user-name">{userName || "Usuário"}</span>
-            <div className="status-row">
-              <span className="user-role">Administrador</span>
+      {/* MOBILE DRAWER */}
+      <div className={`mobile-drawer ${isMenuOpen ? "open" : ""}`}>
+        <div className="drawer-overlay" onClick={toggleMenu}></div>
+        <div className="drawer-content">
+          <div className="drawer-header">
+            <span className="drawer-name">{userName || "Usuário"}</span>
+            <div className="drawer-status-badge">
               <span
                 className={`status-dot ${isOnline ? "online" : "offline"}`}
               ></span>
+              <span className="drawer-role">Administrador</span>
             </div>
           </div>
-
-          <button onClick={onLogout} className="logout-btn" title="Sair">
-            <FaSignOutAlt size={20} />
-          </button>
+          <div className="drawer-body">
+            <button
+              className={`drawer-action-btn ${
+                isOnline ? "active-online" : "active-offline"
+              }`}
+              onClick={() => {
+                setIsOnline(!isOnline);
+                toggleMenu();
+              }}
+            >
+              <FaPowerOff /> Ficar {isOnline ? "Offline" : "Online"}
+            </button>
+            <button className="drawer-action-btn">
+              <FaBell /> Notificações
+            </button>
+            <div className="drawer-spacer"></div>
+            <button
+              className="drawer-action-btn logout-action"
+              onClick={onLogout}
+            >
+              <FaSignOutAlt /> Sair do Sistema
+            </button>
+          </div>
         </div>
       </div>
     </header>
