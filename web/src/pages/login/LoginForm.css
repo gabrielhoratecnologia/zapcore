@@ -1,0 +1,186 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;600&family=Poppins:wght@300;400;500&display=swap");
+
+:root {
+  --color-primary: #3fbde4;
+  --color-secondary: #2e95b4;
+  --color-text-dark: #3d3d3d;
+  --color-text-light: #666;
+}
+
+/* ---------- CONTAINER GERAL ---------- */
+.login-page-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9fa 100%);
+  background-attachment: fixed;
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* ---------- CARD ---------- */
+.login-card {
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  animation: fadeIn 0.4s ease-in-out;
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 35px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- NOVO TITULO (HEADER) ---------- */
+.brand-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  line-height: 1.1;
+}
+
+.brand-main {
+  font-family: "Poppins", sans-serif;
+  font-size: 3rem;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  letter-spacing: -0.5px;
+}
+
+.brand-sub {
+  font-family: "Poppins", sans-serif;
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--color-primary); 
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 4px;
+}
+
+/* ---------- FORM ---------- */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b4b4b;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.clean-input {
+  padding: 12px 14px;
+  color: #3d3d3d;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.clean-input:focus {
+  border-color: var(--color-primary);
+  background-color: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(33, 115, 136, 0.15);
+}
+
+/* ---------- BUTTON ---------- */
+.login-button {
+  background-color: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.login-button:hover {
+  background-color: var(--color-secondary);
+  transform: translateY(-1px);
+}
+
+/* ---------- LINKS ---------- */
+.forgot-link {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.link-button:hover {
+  color: var(--color-secondary);
+}
+
+/* ---------- TERMOS ---------- */
+.termos-box {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background-color: #fafafa;
+  margin-bottom: 12px;
+  text-align: left;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* ---------- FOOTER ---------- */
+.card-footer {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 25px;
+  line-height: 1.4;
+}
+
+/* ---------- RESPONSIVO ---------- */
+@media (max-width: 600px) {
+  .login-card {
+    max-width: 100%;
+    padding: 30px 20px;
+  }
+  .brand-main {
+    font-size: 2rem;
+  }
+  .brand-sub {
+    font-size: 1.2rem;
+  }
+}
