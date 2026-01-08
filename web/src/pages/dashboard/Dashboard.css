@@ -1,0 +1,77 @@
+.dashboard-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9fafb;
+}
+
+/* Espaço para o Header Fixo */
+.dashboard-content {
+  display: flex;
+  margin-top: 64px; /* Altura exata do seu Header */
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* Lateral: Lista de Conversas */
+.sidebar {
+  width: 350px;
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.badge {
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Área Principal */
+.chat-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+}
+
+.chat-placeholder {
+  text-align: center;
+  color: #9ca3af;
+}
+
+.empty-msg {
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Responsividade Básica */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+  }
+  .chat-view {
+    display: none; /* No mobile, foca na lista primeiro */
+  }
+}

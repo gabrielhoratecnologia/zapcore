@@ -1,0 +1,221 @@
+/* Importação da Poppins caso não esteja no projeto */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+
+.main-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px; /* Levemente maior para acomodar a Poppins com respiro */
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 1000;
+  font-family: "Poppins", sans-serif; /* Aplicado globalmente no header */
+}
+
+/* Esquerda: Logo */
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.logo-brand {
+  font-size: 1.4rem;
+  font-weight: 600; /* Mais peso */
+  color: #1f2937;
+  letter-spacing: -0.5px;
+}
+
+.logo-subtext {
+  font-size: 0.85rem;
+  font-weight: 300; /* Mais fino */
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Centro: Busca */
+.header-center {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 40px;
+}
+
+.search-container {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.search-container input {
+  width: 100%;
+  background-color: #f3f4f6;
+  border: 1px solid transparent;
+  border-radius: 8px; /* Menos arredondado para um visual moderno */
+  padding: 10px 16px 10px 42px;
+  outline: none;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-container input:focus {
+  background-color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+
+/* Direita: Organização */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 18px; /* Espaçamento fixo entre os elementos */
+  flex-shrink: 0; /* Impede que a direita seja espremida */
+}
+
+/* Botão de Alternar Status */
+.status-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  font-family: "Poppins", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #fff;
+}
+
+.status-toggle-btn.is-online {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+.status-toggle-btn.is-online:hover {
+  background-color: #ecfdf5;
+}
+
+.status-toggle-btn.is-offline {
+  color: #6b7280;
+  border-color: #d1d5db;
+}
+
+.status-toggle-btn.is-offline:hover {
+  background-color: #f3f4f6;
+}
+
+/* Notificação */
+.icon-button {
+  position: relative;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+}
+
+/* Divisor Vertical */
+.divider {
+  width: 1px;
+  height: 24px;
+  background-color: #e5e7eb;
+}
+
+/* Perfil e Nome */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  line-height: 1;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap; /* Impede que o nome quebre em duas linhas */
+}
+
+.user-role {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background-color: #10b981;
+}
+.status-dot.offline {
+  background-color: #9ca3af;
+}
+
+/* Botão Sair */
+.logout-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+/* Responsividade */
+@media (max-width: 768px) {
+  .logo-subtext,
+  .header-center {
+    display: none;
+  }
+}
