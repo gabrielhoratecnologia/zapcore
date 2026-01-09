@@ -85,7 +85,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-      <Header userName={userData.name} />
+      <Header userName={userData.name} userId={uid} />
 
       <div className="dashboard-main">
         <aside className="sidebar-section">
