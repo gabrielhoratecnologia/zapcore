@@ -129,6 +129,11 @@
   cursor: pointer;
   padding: 8px;
   transition: all 0.2s ease;
+  outline: none;
+}
+
+.icon-button:active {
+  outline: none;
 }
 
 .icon-button:hover {
@@ -146,6 +151,7 @@
   border-radius: 50%;
   border: 2px solid white;
   animation: pulse-red 2s infinite;
+  outline: none;
 }
 
 .status-dot {
@@ -283,4 +289,18 @@
   .header-container {
     padding: 0 40px;
   }
+}
+
+/* Adicione isso ao Header.css */
+.notification-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon-button.active {
+  color: var(--color-primary);
+  background: #f0f9ff;
+  border-radius: 8px;
+  outline: none;
 }

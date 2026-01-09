@@ -1,0 +1,143 @@
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 15px);
+  right: -10px;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  overflow: hidden;
+  animation: slideInNotif 0.2s ease-out;
+}
+
+@keyframes slideInNotif {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Seta do Dropdown */
+.notification-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: white;
+  transform: rotate(45deg);
+  border-left: 1px solid #f0f0f0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.notif-header {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: #1f2937;
+}
+
+.notif-count {
+  font-size: 11px;
+  background: #eff6ff;
+  color: var(--color-primary);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.notif-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  padding: 14px 16px;
+  display: block;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.notif-item:hover {
+  background: #f8fafc;
+}
+
+.notif-item.unread {
+  background: #f0f9ff66;
+}
+
+.notif-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.notif-message {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  padding-right: 10px;
+}
+
+.notif-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.unread-indicator {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+.notif-empty {
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.notif-footer {
+  padding: 10px;
+  text-align: center;
+  border-top: 1px solid #f3f4f6;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  padding: 5px;
+}
+
+.view-all-btn:hover {
+  text-decoration: underline;
+}

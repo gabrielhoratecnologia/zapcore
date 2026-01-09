@@ -1,22 +1,67 @@
-import React, { useState } from "react";
-import {
-  FaSignOutAlt,
-  FaBell,
-  FaBars,
-  FaTimes,
-} from "react-icons/fa";
+import React, { useState, useRef, useEffect } from "react";
+import { FaSignOutAlt, FaBell, FaBars, FaTimes } from "react-icons/fa";
+import NotificationDropdown from "../../components/notificationDropDown/NotificationDropdown.jsx";
 import "./Header.css";
 
 const Header = ({ userName, onLogout }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+  // MOCK DE DADOS: No futuro, isso virá do Firebase
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      title: "Atenção",
+      message: "Cuidado com a quantidade de vezes que você reativa um template. Tem clientes que valem a pena, outros nem tanto.",
+      read: false,
+      time: "5m atrás",
+    },
+    {
+      id: 2,
+      title: "Sistema",
+      message: "Manutenção programada para as 22h.",
+      read: false,
+      time: "1h atrás",
+    },
+    {
+      id: 3,
+      title: "Atualização",
+      message: "Versão 2.0 liberada.",
+      read: true,
+      time: "2h atrás",
+    },
+  ]);
+
+  const hasUnread = notifications.some((n) => !n.read);
+  const dropdownRef = useRef(null);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
+  const toggleNotifications = () => {
+    setIsNotifOpen(!isNotifOpen);
+  };
+
+  const markAsRead = (id) => {
+    setNotifications(
+      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  // Fecha o dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="main-header">
       <div className="header-container">
-        {/* ESQUERDA: LOGO */}
         <div className="header-left">
           <div className="logo-container">
             <span className="logo-brand">Seravalli</span>
@@ -24,17 +69,27 @@ const Header = ({ userName, onLogout }) => {
           </div>
         </div>
 
-        {/* CENTRO: ESPAÇO RESERVADO PARA FUTUROS COMPONENTES */}
-        <div className="header-center">
-          {/* Futuros componentes entrarão aqui */}
-        </div>
+        <div className="header-center"></div>
 
-        {/* DIREITA: AÇÕES */}
         <div className="header-right desktop-only">
-          <button className="icon-button" aria-label="Notificações">
-            <FaBell size={18} />
-            <span className="notification-badge"></span>
-          </button>
+          <div className="notification-wrapper" ref={dropdownRef}>
+            <button
+              className={`icon-button ${isNotifOpen ? "active" : ""}`}
+              onClick={toggleNotifications}
+              aria-label="Notificações"
+            >
+              <FaBell size={18} />
+              {hasUnread && <span className="notification-badge"></span>}
+            </button>
+
+            {isNotifOpen && (
+              <NotificationDropdown
+                notifications={notifications}
+                onMarkRead={markAsRead}
+                onClose={() => setIsNotifOpen(false)}
+              />
+            )}
+          </div>
 
           <div className="divider"></div>
 
@@ -73,8 +128,9 @@ const Header = ({ userName, onLogout }) => {
             </div>
           </div>
           <div className="drawer-body">
+            {/* No mobile, simplificamos ou abrimos um modal de notificações */}
             <button className="drawer-action-btn">
-              <FaBell /> Notificações
+              <FaBell /> Notificações {hasUnread && "(Novo)"}
             </button>
             <div className="drawer-spacer"></div>
             <button
