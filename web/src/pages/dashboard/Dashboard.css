@@ -5,16 +5,52 @@
   display: flex;
   flex-direction: column;
   background-color: #f0f2f5;
-  overflow: hidden; /* Impede scroll na página inteira */
+  overflow: hidden;
 }
 
-/* 2. Área de Conteúdo (Abaixo do Header) */
+/* 2. Área de Conteúdo */
 .dashboard-main {
-  display: flex; /* ALINHA SIDEBAR E CHAT LADO A LADO */
-  margin-top: 75px; /* Altura exata do seu Header */
-  height: calc(100vh - 64px); /* Ocupa o restante da tela */
+  display: flex;
+  margin-top: 64px; /* Ajuste para a altura do seu Header */
+  height: calc(100vh - 64px);
   width: 100%;
   overflow: hidden;
+}
+
+/* NOVA BARRA DE NAVEGAÇÃO (ÍCONES) */
+.nav-sidebar {
+  width: 60px;
+  min-width: 60px;
+  background-color: #202c33;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 15px;
+  gap: 10px;
+}
+
+.nav-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  transition: background 0.2s;
+  color: #aebac1;
+}
+
+.nav-item:hover {
+  background-color: #3b4a54;
+}
+
+.nav-item.active {
+  background-color: #3b4a54;
+  color: #00a884; /* Cor verde estilo WhatsApp */
 }
 
 /* 3. Coluna da Esquerda (Lista) */
@@ -35,6 +71,7 @@
   min-height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .sidebar-controls h3 {
@@ -44,14 +81,39 @@
   color: #111b21;
 }
 
-/* 4. Lista de Conversas (Com Scroll) */
+.badge {
+  background: #eee;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #667781;
+}
+
+/* 4. Lista de Conversas */
 .list-container {
   flex: 1;
   overflow-y: auto;
   background-color: #ffffff;
 }
 
-/* Customização da Scrollbar da lista */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #667781;
+  font-size: 14px;
+}
+
+/* 5. Coluna da Direita */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #efeae2;
+  height: 100%;
+  position: relative;
+}
+
+/* Customização Scrollbar */
 .list-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -59,43 +121,17 @@
   background-color: #ced3d6;
 }
 
-/* 5. Coluna da Direita (Janela de Chat) */
-.chat-section {
-  flex: 1; /* Faz o chat ocupar TODO o espaço restante à direita */
-  display: flex;
-  flex-direction: column;
-  background-color: #efeae2; /* Cor de fundo clássica de chat */
-  height: 100%;
-  position: relative;
-}
-
-/* Estilo para quando não há chat selecionado */
-.chat-placeholder {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background-color: #f8f9fa;
-  color: #667781;
-}
-
-.chat-placeholder h2 {
-  font-size: 24px;
-  font-weight: 300;
-  color: #41525d;
-  margin-bottom: 8px;
-}
-
-/* 6. Responsividade (Ajuste para Telas Pequenas) */
+/* 6. Responsividade */
 @media (max-width: 768px) {
+  .nav-sidebar {
+    width: 50px;
+    min-width: 50px;
+  }
   .sidebar-section {
     width: 100%;
-    min-width: 100%;
+    min-width: 0;
   }
-
   .chat-section {
-    display: none; /* Esconde o chat no mobile para priorizar a lista */
+    display: none;
   }
 }
