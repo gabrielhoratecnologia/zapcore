@@ -1,13 +1,24 @@
-/* CONTAINER PRINCIPAL */
+:root {
+  --color-primary: #3fbde4;
+  --color-secondary: #2e95b4;
+  --color-text: #1a1a1a;
+  --color-online: #10b981;
+  --color-danger: #ef4444;
+  --header-height: 75px;
+}
+
+
+/* --- CONTAINER PRINCIPAL --- */
 .chat-active-container {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   background-color: #f0f2f5;
+  position: relative;
 }
 
-/* HEADER */
+/* --- HEADER --- */
 .chat-active-header {
   padding: 10px 20px;
   background-color: #ffffff;
@@ -15,7 +26,6 @@
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   z-index: 10;
-  margin-top: 10px;
 }
 
 .header-avatar {
@@ -31,7 +41,7 @@
   color: #111827;
 }
 
-/* LISTA DE MENSAGENS */
+/* --- LISTA DE MENSAGENS --- */
 .chat-messages-list {
   flex: 1;
   padding: 20px;
@@ -39,19 +49,18 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: #e5ddd5;
+  background-color: #e5ddd5; /* Cor de fundo clássica WhatsApp */
   scroll-behavior: smooth;
 }
 
-/* ANIMAÇÃO DE ENTRADA DAS MENSAGENS */
 @keyframes messageAppear {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.97);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -59,18 +68,14 @@
   display: flex;
   width: 100%;
   margin-bottom: 2px;
-  /* Aplica a animação */
-  animation: messageAppear 0.3s cubic-bezier(0.1, 0.5, 0.5, 1) both;
+  animation: messageAppear 0.2s ease-out both;
 }
 
 .msg-row.sent {
   justify-content: flex-end;
-  transform-origin: right bottom;
 }
-
 .msg-row.received {
   justify-content: flex-start;
-  transform-origin: left bottom;
 }
 
 .msg-bubble {
@@ -82,16 +87,14 @@
 }
 
 .msg-bubble p {
-  color: #000000;
-  text-align: start;
   margin: 0;
+  text-align: start;
+  color: #000;
 }
-
 .sent .msg-bubble {
   background-color: #dcf8c6;
   border-top-right-radius: 0;
 }
-
 .received .msg-bubble {
   background-color: #ffffff;
   border-top-left-radius: 0;
@@ -105,10 +108,10 @@
   margin-left: 8px;
 }
 
-/* FOOTER E AREA DE INPUT */
+/* --- FOOTER E ÁREA DE INPUT --- */
 .chat-footer {
-  padding: 12px 20px;
-  background-color: #e5ddd5;
+  padding: 10px 15px;
+  background-color: #f0f2f5;
   position: relative;
   display: flex;
   justify-content: center;
@@ -119,9 +122,8 @@
   align-items: center;
   background-color: #ffffff;
   padding: 5px 10px 5px 15px;
-  border-radius: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  gap: 12px;
+  border-radius: 24px;
+  gap: 10px;
   width: 100%;
   max-width: 1000px;
 }
@@ -134,142 +136,122 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: color 0.2s;
+  outline: none;
 }
 
 .emoji-trigger-btn:hover,
 .emoji-trigger-btn.active {
-  color: #ffbc38;
-  transform: scale(1.2);
+  color: var(--color-primary);
+  outline: none;
 }
 
 .message-form {
   flex: 1;
 }
-
 .message-form input {
   width: 100%;
   border: none;
   outline: none;
-  font-size: 16px;
-  padding: 10px 0;
+  color: var(--color-text);
+  font-size: 15px;
+  padding: 8px 0;
   background: transparent;
-  color: #000000;
 }
 
-.message-form input::placeholder {
-  color: #9ca3af;
-}
-
-.send-circle-btn {
-  background-color: #00a884;
-  border: none;
-  color: white;
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  padding: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.send-circle-btn svg {
-  font-size: 18px;
-  margin-right: 3px;
-}
-
-.send-circle-btn:hover:not(:disabled) {
-  background-color: #008f72;
-  transform: scale(1.08);
-}
-
-.send-circle-btn:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-.send-circle-btn:disabled {
-  background-color: #cbd5e1;
-  color: #f8fafc;
-  cursor: not-allowed;
-}
-
+/* --- CUSTOMIZAÇÃO DO EMOJI PICKER (ESTILO WHATSAPP) --- */
 .emoji-picker-wrapper {
   position: absolute;
-  bottom: 85px;
-  left: 20px;
+  bottom: 75px;
+  left: 15px;
   z-index: 1000;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid #e9edef;
+  animation: emojiAppear 0.2s ease-out;
 }
 
-.anim-fade-in {
-  animation: emojiAppear 0.3s ease-out;
+/* Resetando variáveis da biblioteca */
+.EmojiPickerReact {
+  --epr-highlight-color: #00a884 !important;
+  --epr-search-border-color: transparent !important;
+  --epr-bg-color: #ffffff !important;
+  --epr-category-label-bg-color: #ffffff !important;
+  --epr-category-label-text-color: #667781 !important;
+  border: none !important;
+}
+
+/* Barra Superior de Categorias */
+.EmojiPickerReact .epr-category-nav {
+  display: none;
+}
+
+/* Campo de Busca Estilo WhatsApp */
+.EmojiPickerReact .epr-search-container {
+  padding: 10px 15px !important;
+}
+
+.EmojiPickerReact .epr-search {
+  background-color: #f0f2f5 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 10px 10px 10px 35px !important;
+  font-size: 14px !important;
+}
+
+/* Títulos de seção (ex: "Natureza", "Recentes") */
+.EmojiPickerReact .epr-emoji-category-label {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 15px !important;
+  text-transform: none !important;
+}
+
+/* Esconder o Preview e Mood que poluíam o visual */
+.EmojiPickerReact .epr-preview {
+  display: none !important;
 }
 
 @keyframes emojiAppear {
   from {
     opacity: 0;
-    transform: translateY(15px) scale(0.95);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
-.chat-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: #6b7280;
-  background-color: #f8fafc;
-  text-align: center;
-  padding: 20px;
-}
-
-/* MODAL DE DETALHES DO EVENTO */
+/* --- MODAL DE DETALHES --- */
 .details-popover {
   position: absolute;
-  top: 70px;
+  top: 60px;
   right: 20px;
   width: 300px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   z-index: 100;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
   border: 1px solid #e5e7eb;
-}
-
-.details-popover h5 {
-  margin: 0 0 8px 0;
-  color: #374151;
-  font-size: 16px;
-  border-bottom: 1px solid #f3f4f6;
-  padding-bottom: 8px;
 }
 
 .details-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: var(--color-text);
+  margin-bottom: 12px;
 }
 
 .details-field label {
   font-size: 12px;
   font-weight: 600;
+  color: #4b5563;
 }
 
 .details-field input,
@@ -278,47 +260,48 @@
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
-  background-color: #dbdfe4;
-  color: var(--color-text);
+  background-color: #f9fafb;
 }
 
 .notes-history {
   max-height: 120px;
   overflow-y: auto;
-  background: #f9fafb;
+  background: #f3f4f6;
   padding: 8px;
   border-radius: 6px;
-  font-size: 13px;
-  border: 1px solid #edf2f7;
-}
-
-.note-item {
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px dashed #e5e7eb;
-}
-
-.note-item:last-child {
-  border: none;
+  font-size: 12px;
 }
 
 .save-details-btn {
+  width: 100%;
   background-color: #00a884;
   color: white;
   border: none;
-  padding: 8px;
+  padding: 10px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
+  transition: background 0.2s;
+}
+
+.save-details-btn:hover {
+  background-color: #008f72;
 }
 
 .info-trigger-btn {
   background: none;
   border: none;
-  color: #6b7280;
+  color: #8696a0;
   font-size: 20px;
   cursor: pointer;
-  margin-left: auto; /* Empurra para a direita */
+  margin-left: auto;
+}
+
+.chat-placeholder {
   display: flex;
   align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #94a3b8;
+  background-color: #f8fafc;
 }

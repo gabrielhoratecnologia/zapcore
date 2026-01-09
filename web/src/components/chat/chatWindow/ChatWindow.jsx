@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FaSmile, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
-import EmojiPicker from "emoji-picker-react";
-import { useChatDetails } from "../../../hooks/useChatDetails.jsx"; // Importe o hook
+import EmojiPicker, { EmojiStyle, Categories } from "emoji-picker-react";
+import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
@@ -16,7 +16,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Estados locais para edição rápida antes de salvar
   const [tempBrideName, setTempBrideName] = useState("");
   const [tempWeddingDate, setTempWeddingDate] = useState("");
   const [newNoteText, setNewNoteText] = useState("");
@@ -25,12 +24,10 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const messagesEndRef = useRef(null);
   const detailsRef = useRef(null);
 
-  // Integração com o Hook do Firestore
   const { details, updateGeneralDetails, addNote, loading } = useChatDetails(
     chat?.id
   );
 
-  // Sincroniza campos temporários quando os dados do Firebase mudam
   useEffect(() => {
     setTempBrideName(details.brideName);
     setTempWeddingDate(details.weddingDate);
@@ -48,15 +45,18 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     const handleClickOutside = (event) => {
       if (
         emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(event.target)
-      )
+        !emojiPickerRef.current.contains(event.target) &&
+        !event.target.closest(".emoji-trigger-btn")
+      ) {
         setShowEmojiPicker(false);
+      }
       if (
         detailsRef.current &&
         !detailsRef.current.contains(event.target) &&
         !event.target.closest(".info-trigger-btn")
-      )
+      ) {
         setShowDetails(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -84,15 +84,11 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   };
 
   const handleSaveDetails = async () => {
-    // 1. Atualiza nome e data
     await updateGeneralDetails(tempBrideName, tempWeddingDate);
-
-    // 2. Se houver texto na nota, adiciona ao array
     if (newNoteText.trim()) {
       await addNote(newNoteText);
       setNewNoteText("");
     }
-
     setShowDetails(false);
   };
 
@@ -114,7 +110,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
         />
         <div className="header-info">
           <h4>
-            {details.brideName || chat.name} {" "}
+            {details.brideName || chat.name}{" "}
             {details.weddingDate || chat.weddingDate}
           </h4>
         </div>
@@ -130,7 +126,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
       {showDetails && (
         <div className="details-popover anim-fade-in" ref={detailsRef}>
           <h5>Detalhes do Evento</h5>
-
           <div className="details-field">
             <label>Nome do Contato</label>
             <input
@@ -140,7 +135,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               placeholder="Nome da noiva..."
             />
           </div>
-
           <div className="details-field">
             <label>Data do Evento</label>
             <input
@@ -149,12 +143,10 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               onChange={(e) => setTempWeddingDate(e.target.value)}
             />
           </div>
-
           <div className="details-field">
             <label>Histórico de Notas</label>
             <div className="notes-history">
               {details.notes.length > 0 ? (
-                // Mostra notas da mais recente para a mais antiga
                 [...details.notes].reverse().map((note) => (
                   <div key={note.id} className="note-item">
                     <small>{note.createdAt}:</small> {note.text}
@@ -167,7 +159,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               )}
             </div>
           </div>
-
           <div className="details-field">
             <label>Adicionar Nota</label>
             <textarea
@@ -177,7 +168,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               placeholder="Digite observações importantes..."
             />
           </div>
-
           <button
             className="save-details-btn"
             onClick={handleSaveDetails}
@@ -218,9 +208,36 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           >
             <EmojiPicker
               onEmojiClick={onEmojiClick}
-              width="350px"
-              height="450px"
+              autoFocusSearch={false}
               theme="light"
+              emojiStyle={EmojiStyle.NATIVE}
+              searchPlaceholder="Pesquisar emoji"
+              width="350px"
+              height="400px"
+              previewConfig={{
+
+                showPreview: false,
+              }}
+              categories={[
+                { category: Categories.SUGGESTED, name: "Recentes" },
+                {
+                  category: Categories.SMILEYS_PEOPLE,
+                  name: "Smileys e Pessoas",
+                },
+                {
+                  category: Categories.ANIMALS_NATURE,
+                  name: "Animais e Natureza",
+                },
+                { category: Categories.FOOD_DRINK, name: "Comida e Bebida" },
+                {
+                  category: Categories.TRAVEL_PLACES,
+                  name: "Viagens e Lugares",
+                },
+                { category: Categories.ACTIVITIES, name: "Atividades" },
+                { category: Categories.OBJECTS, name: "Objetos" },
+                { category: Categories.SYMBOLS, name: "Símbolos" },
+                { category: Categories.FLAGS, name: "Bandeiras" },
+              ]}
             />
           </div>
         )}
@@ -241,13 +258,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               onChange={(e) => setNewMessage(e.target.value)}
             />
           </form>
-          <button
-            className="send-circle-btn"
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
-          >
-            <FaPaperPlane />
-          </button>
+
         </div>
       </footer>
     </div>
