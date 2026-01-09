@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import {
   FaSignOutAlt,
   FaBell,
-  FaSearch,
-  FaPowerOff,
   FaBars,
   FaTimes,
 } from "react-icons/fa";
 import "./Header.css";
 
-const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
+const Header = ({ userName, onLogout }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -18,7 +16,7 @@ const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
   return (
     <header className="main-header">
       <div className="header-container">
-        {/* ESQUERDA: LOGO COM ANIMAÇÃO */}
+        {/* ESQUERDA: LOGO */}
         <div className="header-left">
           <div className="logo-container">
             <span className="logo-brand">Seravalli</span>
@@ -26,20 +24,12 @@ const Header = ({ userName, onLogout, searchTerm, setSearchTerm }) => {
           </div>
         </div>
 
-        {/* CENTRO: BUSCA */}
+        {/* CENTRO: ESPAÇO RESERVADO PARA FUTUROS COMPONENTES */}
         <div className="header-center">
-          <div className="search-container">
-            <FaSearch className="search-icon" size={14} />
-            <input
-              type="text"
-              placeholder="Buscar noiva, número ou data..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          {/* Futuros componentes entrarão aqui */}
         </div>
 
-        {/* DIREITA (AÇÕES) */}
+        {/* DIREITA: AÇÕES */}
         <div className="header-right desktop-only">
           <button className="icon-button" aria-label="Notificações">
             <FaBell size={18} />

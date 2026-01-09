@@ -56,7 +56,7 @@
   flex: 1;
   padding: 12px 5px;
   border: none;
-  background: #f8f9fa; /* Fundo sutil para botões inativos */
+  background: none; /* Fundo sutil para botões inativos */
   font-weight: 500;
   font-size: 13px;
   color: #8696a0;
@@ -71,7 +71,7 @@
 }
 
 .tab-btn.active {
-  background-color: rgba(43, 43, 43, 0.1); /* Primary com transparência */
+  background-color: rgba(97, 97, 97, 0.1); /* Primary com transparência */
   color: var(--color-text);
   outline: none;
 }
@@ -107,7 +107,7 @@
   padding: 10px 16px;
   border-radius: 10px;
   font-size: 14px;
-  outline: none; /* Sem outline */
+  outline: none; 
   color: var(--color-text);
   transition: border-color 0.2s;
 }
