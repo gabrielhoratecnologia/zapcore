@@ -7,7 +7,6 @@
   --header-height: 75px;
 }
 
-
 /* --- CONTAINER PRINCIPAL --- */
 .chat-active-container {
   display: flex;
@@ -26,6 +25,7 @@
   align-items: center;
   border-bottom: 1px solid #e5e7eb;
   z-index: 10;
+  margin-top: 10px;
 }
 
 .header-avatar {
@@ -90,7 +90,18 @@
   margin: 0;
   text-align: start;
   color: #000;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
+
+.msg-bubble p b {
+  font-weight: bold;
+}
+
+.msg-bubble p i {
+  font-style: italic;
+}
+
 .sent .msg-bubble {
   background-color: #dcf8c6;
   border-top-right-radius: 0;

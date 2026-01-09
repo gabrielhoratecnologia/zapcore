@@ -1,10 +1,28 @@
 import { useState, useEffect, useRef } from "react";
 import { FaSmile, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
 import EmojiPicker, { EmojiStyle, Categories } from "emoji-picker-react";
+import DOMPurify from "dompurify"; // 1. Importação do sanitizador
 import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
+
+/**
+ * Função de formatação estilo WhatsApp
+ * Transforma marcações em HTML e limpa ameaças de segurança
+ */
+const formatWhatsAppText = (text) => {
+  if (!text) return "";
+
+  // Transforma as marcações em tags HTML
+  const rawHtml = text
+    .replace(/\*(.*?)\*/g, "<b>$1</b>") // Negrito
+    .replace(/_(.*?)_/g, "<i>$1</i>") // Itálico
+    .replace(/~(.*?)~/g, "<strike>$1</strike>"); // Riscado
+
+  // 2. Sanitiza o HTML resultante para evitar XSS de mensagens de terceiros
+  return DOMPurify.sanitize(rawHtml);
+};
 
 const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -29,8 +47,8 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   );
 
   useEffect(() => {
-    setTempBrideName(details.brideName);
-    setTempWeddingDate(details.weddingDate);
+    setTempBrideName(details.brideName || "");
+    setTempWeddingDate(details.weddingDate || "");
   }, [details]);
 
   const scrollToBottom = () => {
@@ -146,7 +164,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           <div className="details-field">
             <label>Histórico de Notas</label>
             <div className="notes-history">
-              {details.notes.length > 0 ? (
+              {details.notes && details.notes.length > 0 ? (
                 [...details.notes].reverse().map((note) => (
                   <div key={note.id} className="note-item">
                     <small>{note.createdAt}:</small> {note.text}
@@ -187,7 +205,12 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
             }`}
           >
             <div className="msg-bubble">
-              <p>{msg.text}</p>
+              {/* 3. Renderização segura com HTML formatado */}
+              <p
+                dangerouslySetInnerHTML={{
+                  __html: formatWhatsAppText(msg.text),
+                }}
+              />
               <span className="msg-time">
                 {msg.createdAt?.toDate().toLocaleTimeString([], {
                   hour: "2-digit",
@@ -215,7 +238,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               width="350px"
               height="400px"
               previewConfig={{
-
                 showPreview: false,
               }}
               categories={[
@@ -258,7 +280,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
               onChange={(e) => setNewMessage(e.target.value)}
             />
           </form>
-
         </div>
       </footer>
     </div>
