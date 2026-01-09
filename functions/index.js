@@ -5,94 +5,58 @@ admin.initializeApp();
 const db = admin.firestore();
 
 exports.whatsappWebhook = functions.https.onRequest(async (req, res) => {
+  if (req.method !== "POST") return res.sendStatus(404);
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).send("Only POST allowed");
-    }
+    const value = req.body?.entry?.[0]?.changes?.[0]?.value;
+    const message = value?.messages?.[0];
 
-    /**
-     * Payload esperado (simulando WhatsApp)
-     */
-    const {
-      tenantId,
-      phone,
-      text
-    } = req.body;
+    if (!message) return res.sendStatus(200);
 
-    if (!tenantId || !phone || !text) {
-      return res.status(400).json({
-        error: "tenantId, phone e text são obrigatórios",
-      });
-    }
+    const phone = message.from;
+    const text = message.text?.body || null;
 
-    // 1️⃣ Procurar conversation existente
-    const convoSnap = await db
-      .collection("conversations")
-      .where("tenantId", "==", tenantId)
-      .where("phone", "==", phone)
-      .limit(1)
-      .get();
+    const tenantId = "zapcore-dev"; // depois resolve dinamicamente
+    const conversationId = `${tenantId}_${phone}`;
 
-    let conversationRef;
-    let conversationId;
+    const conversationRef = db.collection("conversations").doc(conversationId);
+    const conversationSnap = await conversationRef.get();
 
-    if (convoSnap.empty) {
-      // 2️⃣ Criar nova conversation (assignedTo começa null)
-      conversationRef = db.collection("conversations").doc();
-      conversationId = conversationRef.id;
-
+    // 🔹 cria conversa apenas se não existir
+    if (!conversationSnap.exists) {
       await conversationRef.set({
         id: conversationId,
         tenantId,
         phone,
-
-        brideName: null,
-        weddingDate: null,
-
-        assignedTo: null,          // 👈 preparado para atendimento
-        status: "open",
-
         lastMessage: text,
+        status: "open",
+        assignedTo: null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     } else {
-      // 3️⃣ Atualizar conversation existente
-      conversationRef = convoSnap.docs[0].ref;
-      conversationId = convoSnap.docs[0].id;
-
+      // 🔹 atualiza apenas o necessário
       await conversationRef.update({
         lastMessage: text,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     }
 
-    // 4️⃣ Criar message (sempre)
-    const messageRef = db.collection("messages").doc();
-
-    await messageRef.set({
-      id: messageRef.id,
+    // 🔹 salva mensagem (modelo atual)
+    await db.collection("messages").add({
       conversationId,
       tenantId,
-
       from: "client",
-      userId: null,
-
-      type: "text",
       text,
+      type: message.type,
       media: null,
-
+      userId: null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    return res.status(200).json({
-      ok: true,
-      conversationId,
-      messageId: messageRef.id,
-    });
-
+    return res.sendStatus(200);
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+    console.error("Webhook error:", err);
+    return res.sendStatus(500);
   }
 });
