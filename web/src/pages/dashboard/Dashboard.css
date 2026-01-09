@@ -1,158 +1,149 @@
-/* 1. Container Principal */
+:root {
+  --color-primary: #3fbde4;
+  --color-secondary: #2e95b4;
+  --color-text: #1a1a1a;
+  --color-online: #10b981;
+  --color-danger: #ef4444;
+  --bg-light: #f0f2f5;
+  --border-color: #e9edef;
+}
+
 .dashboard-wrapper {
   height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
-  background-color: #f0f2f5;
+  background-color: var(--bg-light);
   overflow: hidden;
+  color: var(--color-text);
 }
 
-/* 2. Área de Conteúdo */
 .dashboard-main {
   display: flex;
-  margin-top: 64px; /* Ajuste para a altura do seu Header */
+  margin-top: 64px;
   height: calc(100vh - 64px);
   width: 100%;
   overflow: hidden;
 }
 
-/* NOVA BARRA DE NAVEGAÇÃO (ÍCONES) */
-.nav-sidebar {
-  width: 60px;
-  min-width: 60px;
-  background-color: #202c33;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 15px;
-  gap: 10px;
-}
-
-.nav-item {
-  position: relative; /* Para posicionar a bolinha */
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  transition: background 0.2s;
-  color: #aebac1;
-}
-
-/* Bolinha de notificação nos ícones da lateral */
-.dot-notify {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 10px;
-  height: 10px;
-  background-color: #00a884;
-  border-radius: 50%;
-  border: 2px solid #202c33;
-}
-
-.dot-notify.orange {
-  background-color: #ff9800;
-}
-
-/* Ajuste de hover para os ícones */
-.nav-item:hover {
-  background-color: #3b4a54;
-  color: #fff;
-}
-
-.nav-item:hover {
-  background-color: #3b4a54;
-}
-
-.nav-item.active {
-  background-color: #3b4a54;
-  color: #00a884; /* Cor verde estilo WhatsApp */
-}
-
-/* 3. Coluna da Esquerda (Lista) */
+/* Sidebar Section */
 .sidebar-section {
-  width: 350px;
-  min-width: 350px;
+  width: 380px;
+  min-width: 380px;
   background-color: #ffffff;
-  border-right: 1px solid #d1d7db;
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.sidebar-controls {
-  padding: 15px 20px;
+/* Header interno da Sidebar */
+.sidebar-header-container {
   background-color: #ffffff;
-  border-bottom: 1px solid #f0f2f5;
-  min-height: 60px;
+  padding: 15px 0 10px 0;
+}
+
+.tabs-container {
+  display: flex;
+  padding: 0 16px;
+  gap: 8px;
+  margin-bottom: 16px;
+  outline: none;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 5px;
+  border: none;
+  background: #f8f9fa; /* Fundo sutil para botões inativos */
+  font-weight: 500;
+  font-size: 13px;
+  color: #8696a0;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
 }
 
-.sidebar-controls h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #111b21;
+.tab-btn.active {
+  background-color: rgba(43, 43, 43, 0.1); /* Primary com transparência */
+  color: var(--color-text);
+  outline: none;
 }
 
-.badge {
-  background: #eee;
+.tab-badge {
+  font-size: 11px;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #667781;
+  border-radius: 20px;
+  color: white;
+  min-width: 20px;
+  text-align: center;
+  outline: none;
 }
 
-/* 4. Lista de Conversas */
+/* Badge Verde para Novos (Online/Sucesso) e Primary para Meus */
+.tab-badge.green {
+  background-color: var(--color-danger);
+}
+
+.tab-badge.gray {
+  background-color: var(--color-danger);
+}
+
+/* Busca */
+.search-container {
+  padding: 0 16px 10px 16px;
+}
+
+.search-container input {
+  width: 100%;
+  background-color: #f0f2f5;
+  border: 1px solid transparent;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none; /* Sem outline */
+  color: var(--color-text);
+  transition: border-color 0.2s;
+}
+
+.search-container input:focus {
+  background-color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+/* Lista de Conversas */
 .list-container {
   flex: 1;
   overflow-y: auto;
-  background-color: #ffffff;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Chat Section */
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: #e5ddd5; /* Cor clássica de fundo de chat */
+  height: 100%;
 }
 
 .empty-state {
   padding: 40px 20px;
   text-align: center;
-  color: #667781;
+  color: #8696a0;
   font-size: 14px;
 }
 
-/* 5. Coluna da Direita */
-.chat-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: #efeae2;
-  height: 100%;
-  position: relative;
-}
-
-/* Customização Scrollbar */
-.list-container::-webkit-scrollbar {
-  width: 6px;
-}
-.list-container::-webkit-scrollbar-thumb {
-  background-color: #ced3d6;
-}
-
-/* 6. Responsividade */
+/* Responsividade */
 @media (max-width: 768px) {
-  .nav-sidebar {
-    width: 50px;
-    min-width: 50px;
-  }
   .sidebar-section {
     width: 100%;
-    min-width: 0;
+    min-width: 100%;
   }
   .chat-section {
     display: none;

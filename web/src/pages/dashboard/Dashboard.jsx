@@ -7,9 +7,6 @@ import ConversationItem from "../../components/chat/conversationItem/Conversatio
 import ChatWindow from "../../components/chat/chatWindow/ChatWindow.jsx";
 import "./Dashboard.css";
 
-const IconChat = () => <span>💬</span>;
-const IconQueue = () => <span>📥</span>;
-
 const SOUNDS = {
   NEW_CHAT: "https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3",
   NEW_MESSAGE:
@@ -23,7 +20,7 @@ const Dashboard = () => {
 
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("chats"); // 'chats' (meus) ou 'queue' (abertos)
+  const [activeTab, setActiveTab] = useState("queue"); // 'queue' (Novos) ou 'chats' (Meus)
 
   // Filtros de conversas
   const myConversations = useMemo(() => {
@@ -33,6 +30,19 @@ const Dashboard = () => {
   const conversationsInQueue = useMemo(() => {
     return chat.conversations.filter((c) => !c.assignedTo);
   }, [chat.conversations]);
+
+  // Filtragem por busca
+  const filterBySearch = (list) => {
+    if (!searchTerm) return list;
+    return list.filter((c) => {
+      const name = (c.brideName || c.phone || "Cliente").toLowerCase();
+      return name.includes(searchTerm.toLowerCase());
+    });
+  };
+
+  const currentList = filterBySearch(
+    activeTab === "chats" ? myConversations : conversationsInQueue
+  );
 
   // Lógica de Áudio e Notificações
   const audioNewChat = useRef(new Audio(SOUNDS.NEW_CHAT));
@@ -73,47 +83,46 @@ const Dashboard = () => {
     return <div className="loading-screen">Carregando dados do usuário...</div>;
   }
 
-  // Define qual lista renderizar
-  const currentList =
-    activeTab === "chats" ? myConversations : conversationsInQueue;
-
   return (
     <div className="dashboard-wrapper">
-      <Header
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        userName={userData.name}
-      />
+      <Header userName={userData.name} />
 
       <div className="dashboard-main">
-        <nav className="nav-sidebar">
-          <button
-            className={`nav-item ${activeTab === "chats" ? "active" : ""}`}
-            onClick={() => setActiveTab("chats")}
-            title="Meus Atendimentos"
-          >
-            <IconChat />
-            {myConversations.length > 0 && <span className="dot-notify" />}
-          </button>
-          <button
-            className={`nav-item ${activeTab === "queue" ? "active" : ""}`}
-            onClick={() => setActiveTab("queue")}
-            title="Fila de Espera (Abertos)"
-          >
-            <IconQueue />
-            {conversationsInQueue.length > 0 && (
-              <span className="dot-notify orange" />
-            )}
-          </button>
-        </nav>
-
         <aside className="sidebar-section">
-          <div className="sidebar-controls">
-            <h3>{activeTab === "chats" ? "Meus Chats" : "Aguardando"}</h3>
-            <span className="badge">
-              {currentList.length}{" "}
-              {activeTab === "chats" ? "Ativos" : "Na Fila"}
-            </span>
+          <div className="sidebar-header-container">
+            <div className="tabs-container">
+              <button
+                className={`tab-btn ${activeTab === "queue" ? "active" : ""}`}
+                onClick={() => setActiveTab("queue")}
+              >
+                NOVOS
+                {conversationsInQueue.length > 0 && (
+                  <span className="tab-badge green">
+                    {conversationsInQueue.length}
+                  </span>
+                )}
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "chats" ? "active" : ""}`}
+                onClick={() => setActiveTab("chats")}
+              >
+                MEUS
+                {myConversations.length > 0 && (
+                  <span className="tab-badge gray">
+                    {myConversations.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className="search-container">
+              <input
+                type="text"
+                placeholder="Buscar atendimento"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="list-container">
@@ -139,8 +148,8 @@ const Dashboard = () => {
               <div className="empty-state">
                 <p>
                   {activeTab === "chats"
-                    ? "Você não possui atendimentos ativos."
-                    : "Nenhum atendimento pendente na fila."}
+                    ? "Nenhum atendimento ativo."
+                    : "Nenhum atendimento na fila."}
                 </p>
               </div>
             )}
