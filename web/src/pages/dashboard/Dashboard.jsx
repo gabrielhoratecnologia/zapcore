@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import Header from "../../components/header/Header.jsx";
 import { useAuth } from "../../hooks/useAuth.jsx";
 import { useUser } from "../../hooks/useUser.jsx";
@@ -7,7 +7,6 @@ import ConversationItem from "../../components/chat/conversationItem/Conversatio
 import ChatWindow from "../../components/chat/chatWindow/ChatWindow.jsx";
 import "./Dashboard.css";
 
-// Ícones simples (você pode substituir por Lucide-react ou FontAwesome depois)
 const IconChat = () => <span>💬</span>;
 const IconQueue = () => <span>📥</span>;
 
@@ -24,8 +23,18 @@ const Dashboard = () => {
 
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("chats"); // 'chats' ou 'queue'
+  const [activeTab, setActiveTab] = useState("chats"); // 'chats' (meus) ou 'queue' (abertos)
 
+  // Filtros de conversas
+  const myConversations = useMemo(() => {
+    return chat.conversations.filter((c) => c.assignedTo === uid);
+  }, [chat.conversations, uid]);
+
+  const conversationsInQueue = useMemo(() => {
+    return chat.conversations.filter((c) => !c.assignedTo);
+  }, [chat.conversations]);
+
+  // Lógica de Áudio e Notificações
   const audioNewChat = useRef(new Audio(SOUNDS.NEW_CHAT));
   const audioNewMessage = useRef(new Audio(SOUNDS.NEW_MESSAGE));
   const knownChats = useRef(new Set());
@@ -64,6 +73,10 @@ const Dashboard = () => {
     return <div className="loading-screen">Carregando dados do usuário...</div>;
   }
 
+  // Define qual lista renderizar
+  const currentList =
+    activeTab === "chats" ? myConversations : conversationsInQueue;
+
   return (
     <div className="dashboard-wrapper">
       <Header
@@ -73,40 +86,44 @@ const Dashboard = () => {
       />
 
       <div className="dashboard-main">
-        {/* NOVA BARRA DE NAVEGAÇÃO LATERAL (ÍCONES) */}
         <nav className="nav-sidebar">
           <button
             className={`nav-item ${activeTab === "chats" ? "active" : ""}`}
             onClick={() => setActiveTab("chats")}
-            title="Conversas Ativas"
+            title="Meus Atendimentos"
           >
             <IconChat />
+            {myConversations.length > 0 && <span className="dot-notify" />}
           </button>
           <button
             className={`nav-item ${activeTab === "queue" ? "active" : ""}`}
             onClick={() => setActiveTab("queue")}
-            title="Aguardando Atendimento"
+            title="Fila de Espera (Abertos)"
           >
             <IconQueue />
+            {conversationsInQueue.length > 0 && (
+              <span className="dot-notify orange" />
+            )}
           </button>
         </nav>
 
         <aside className="sidebar-section">
           <div className="sidebar-controls">
-            <h3>{activeTab === "chats" ? "Conversas" : "Fila de Espera"}</h3>
+            <h3>{activeTab === "chats" ? "Meus Chats" : "Aguardando"}</h3>
             <span className="badge">
-              {activeTab === "chats" ? chat.conversations.length : 0} Ativas
+              {currentList.length}{" "}
+              {activeTab === "chats" ? "Ativos" : "Na Fila"}
             </span>
           </div>
 
           <div className="list-container">
-            {activeTab === "chats" ? (
-              chat.conversations.map((c) => (
+            {currentList.length > 0 ? (
+              currentList.map((c) => (
                 <ConversationItem
                   key={c.id}
                   chat={{
                     ...c,
-                    name: c.brideName || c.phone,
+                    name: c.brideName || c.phone || "Cliente",
                     lastMsg: c.lastMessage,
                     lastTime: c.updatedAt?.toDate().toLocaleTimeString([], {
                       hour: "2-digit",
@@ -115,11 +132,16 @@ const Dashboard = () => {
                   }}
                   active={selectedChat?.id === c.id}
                   onClick={setSelectedChat}
+                  onAccept={chat.assignConversation}
                 />
               ))
             ) : (
               <div className="empty-state">
-                <p>Nenhum atendimento pendente na fila.</p>
+                <p>
+                  {activeTab === "chats"
+                    ? "Você não possui atendimentos ativos."
+                    : "Nenhum atendimento pendente na fila."}
+                </p>
               </div>
             )}
           </div>

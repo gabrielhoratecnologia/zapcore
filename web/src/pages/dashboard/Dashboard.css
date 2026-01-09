@@ -30,6 +30,7 @@
 }
 
 .nav-item {
+  position: relative; /* Para posicionar a bolinha */
   width: 44px;
   height: 44px;
   border-radius: 8px;
@@ -42,6 +43,28 @@
   font-size: 20px;
   transition: background 0.2s;
   color: #aebac1;
+}
+
+/* Bolinha de notificação nos ícones da lateral */
+.dot-notify {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  background-color: #00a884;
+  border-radius: 50%;
+  border: 2px solid #202c33;
+}
+
+.dot-notify.orange {
+  background-color: #ff9800;
+}
+
+/* Ajuste de hover para os ícones */
+.nav-item:hover {
+  background-color: #3b4a54;
+  color: #fff;
 }
 
 .nav-item:hover {
