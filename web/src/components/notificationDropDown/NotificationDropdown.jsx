@@ -2,7 +2,6 @@ import React from "react";
 import "./NotificationDropdown.css";
 
 const NotificationDropdown = ({ notifications, onMarkRead }) => {
-  // Formata o Timestamp do Firebase para algo legível
   const formatTime = (timestamp) => {
     if (!timestamp) return "Agora";
 

@@ -1,62 +1,73 @@
-const functions = require("firebase-functions");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
+const axios = require("axios");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-exports.whatsappWebhook = functions.https.onRequest(async (req, res) => {
-  if (req.method !== "POST") return res.sendStatus(404);
+setGlobalOptions({ region: "southamerica-east1" });
 
-  try {
-    const value = req.body?.entry?.[0]?.changes?.[0]?.value;
-    const message = value?.messages?.[0];
+const UAZAPI_BASE_URL = "https://zapcore.uazapi.com";
+const INSTANCE_TOKEN = "a7a49f16-1b09-4c8b-9215-587866361757";
 
-    if (!message) return res.sendStatus(200);
+exports.onMessageCreated = onDocumentCreated(
+  {
+    document: "messages/{messageId}",
+    region: "southamerica-east1",
+    invoker: "public",
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
 
-    const phone = message.from;
-    const text = message.text?.body || null;
+    const msg = snap.data();
 
-    const tenantId = "zapcore-dev"; // depois resolve dinamicamente
-    const conversationId = `${tenantId}_${phone}`;
+    // Só envia mensagens do agente
+    if (msg.from !== "agent") return;
 
-    const conversationRef = db.collection("conversations").doc(conversationId);
-    const conversationSnap = await conversationRef.get();
+    try {
+      // Busca conversa para pegar telefone
+      const convRef = db.collection("conversations").doc(msg.conversationId);
+      const convSnap = await convRef.get();
 
-    // 🔹 cria conversa apenas se não existir
-    if (!conversationSnap.exists) {
-      await conversationRef.set({
-        id: conversationId,
-        tenantId,
-        phone,
-        lastMessage: text,
-        status: "open",
-        assignedTo: null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      if (!convSnap.exists) {
+        console.error("Conversa não encontrada:", msg.conversationId);
+        return;
+      }
+
+      const { phone } = convSnap.data();
+
+      // Envia para Uazapi
+      const { data } = await axios.post(
+        `${UAZAPI_BASE_URL}/send/text`,
+        {
+          number: phone,
+          text: msg.text,
+          linkPreview: false,
+          async: true,
+        },
+        {
+          headers: {
+            token: `${INSTANCE_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      // Atualiza status
+      await snap.ref.update({
+        status: "sent",
+        uazapiResponse: data,
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-    } else {
-      // 🔹 atualiza apenas o necessário
-      await conversationRef.update({
-        lastMessage: text,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    } catch (error) {
+      console.error("Erro ao enviar WhatsApp:", error?.response?.data || error);
+
+      await snap.ref.update({
+        status: "error",
+        errorMessage: error.message || "Erro ao enviar",
       });
     }
-
-    // 🔹 salva mensagem (modelo atual)
-    await db.collection("messages").add({
-      conversationId,
-      tenantId,
-      from: "client",
-      text,
-      type: message.type,
-      media: null,
-      userId: null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    return res.sendStatus(200);
-  } catch (err) {
-    console.error("Webhook error:", err);
-    return res.sendStatus(500);
-  }
-});
+  },
+);

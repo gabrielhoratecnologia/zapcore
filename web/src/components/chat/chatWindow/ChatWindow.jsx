@@ -95,7 +95,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const handleSendMessage = async (e) => {
     if (e) e.preventDefault();
     if (newMessage.trim()) {
-      await sendMessage(chat.id, newMessage);
+      await sendMessage(chat, newMessage);
       setNewMessage("");
       setShowEmojiPicker(false);
     }
