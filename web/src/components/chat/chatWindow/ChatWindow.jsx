@@ -1,38 +1,32 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSmile, FaPaperPlane, FaInfoCircle } from "react-icons/fa";
+import { FaSmile, FaPaperPlane, FaInfoCircle, FaSync } from "react-icons/fa"; // Adicionado FaSync
 import EmojiPicker, { EmojiStyle, Categories } from "emoji-picker-react";
-import DOMPurify from "dompurify"; // 1. Importação do sanitizador
+import DOMPurify from "dompurify";
 import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
+import axios from "axios"; // Certifique-se de ter o axios instalado
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
 
-/**
- * Função de formatação estilo WhatsApp
- * Transforma marcações em HTML e limpa ameaças de segurança
- */
 const formatWhatsAppText = (text) => {
   if (!text) return "";
-
-  // Transforma as marcações em tags HTML
   const rawHtml = text
-    .replace(/\*(.*?)\*/g, "<b>$1</b>") // Negrito
-    .replace(/_(.*?)_/g, "<i>$1</i>") // Itálico
-    .replace(/~(.*?)~/g, "<strike>$1</strike>"); // Riscado
-
-  // 2. Sanitiza o HTML resultante para evitar XSS de mensagens de terceiros
+    .replace(/\*(.*?)\*/g, "<b>$1</b>")
+    .replace(/_(.*?)_/g, "<i>$1</i>")
+    .replace(/~(.*?)~/g, "<strike>$1</strike>");
   return DOMPurify.sanitize(rawHtml);
 };
 
 const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
   const initialsAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    chat?.name || ""
+    chat?.name || "",
   )}&background=random&color=fff`;
 
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Estado para o loading do refresh
 
   const [tempBrideName, setTempBrideName] = useState("");
   const [tempWeddingDate, setTempWeddingDate] = useState("");
@@ -43,7 +37,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const detailsRef = useRef(null);
 
   const { details, updateGeneralDetails, addNote, loading } = useChatDetails(
-    chat?.id
+    chat?.id,
   );
 
   useEffect(() => {
@@ -110,6 +104,23 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     setShowDetails(false);
   };
 
+  // --- NOVA FUNÇÃO DE REFRESH ---
+  const handleManualRefresh = async () => {
+    if (isRefreshing || !chat?.phone) return;
+
+    setIsRefreshing(true);
+    try {
+      // Substitua pela URL real da sua Cloud Function após o deploy
+      const REFRESH_URL = `https://southamerica-east1-zapcore-581b0.cloudfunctions.net/refreshConversation`;
+      await axios.get(REFRESH_URL, { params: { phone: chat.phone } });
+    } catch (error) {
+      console.error("Erro ao sincronizar mensagens:", error);
+      alert("Erro ao sincronizar mensagens.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   if (!chat)
     return (
       <div className="chat-placeholder">
@@ -121,7 +132,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     <div className="chat-active-container">
       <div className="chat-active-header">
         <img
-          src={chat.photo || initialsAvatar}
+          src={chat.pho || initialsAvatar}
           alt=""
           className="header-avatar"
           onError={(e) => (e.target.src = defaultAvatar)}
@@ -133,12 +144,23 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           </h4>
         </div>
 
-        <button
-          className="info-trigger-btn"
-          onClick={() => setShowDetails(!showDetails)}
-        >
-          <FaInfoCircle />
-        </button>
+        <div className="header-actions">
+          <button
+            className={`refresh-btn ${isRefreshing ? "spinning" : ""}`}
+            onClick={handleManualRefresh}
+            title="Sincronizar mensagens"
+            disabled={isRefreshing}
+          >
+            <FaSync />
+          </button>
+
+          <button
+            className="info-trigger-btn"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            <FaInfoCircle />
+          </button>
+        </div>
       </div>
 
       {showDetails && (
@@ -205,7 +227,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
             }`}
           >
             <div className="msg-bubble">
-              {/* 3. Renderização segura com HTML formatado */}
               <p
                 dangerouslySetInnerHTML={{
                   __html: formatWhatsAppText(msg.text),

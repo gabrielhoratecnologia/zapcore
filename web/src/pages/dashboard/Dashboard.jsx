@@ -20,7 +20,7 @@ const Dashboard = () => {
 
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("queue"); // 'queue' (Novos) ou 'chats' (Meus)
+  const [activeTab, setActiveTab] = useState("queue");
 
   // Filtros de conversas
   const myConversations = useMemo(() => {

@@ -3,6 +3,8 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const cors = require("cors");
+const corsHandler = cors({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -29,22 +31,23 @@ exports.onMessageCreated = onDocumentCreated(
 
     const msg = snap.data();
 
-    // Só envia mensagens do agente
+    if (msg.uazapiResponse) return;
+
     if (msg.from !== "agent") return;
 
+    if (msg.source === "uazapi-refresh") {
+      console.log("Ignorando mensagem de refresh:", snap.id);
+      return;
+    }
+
     try {
-      // Busca conversa para pegar telefone
       const convRef = db.collection("conversations").doc(msg.conversationId);
       const convSnap = await convRef.get();
 
-      if (!convSnap.exists) {
-        console.error("Conversa não encontrada:", msg.conversationId);
-        return;
-      }
+      if (!convSnap.exists) return;
 
       const { phone } = convSnap.data();
 
-      // Envia para Uazapi
       const { data } = await axios.post(
         `${UAZAPI_BASE_URL}/send/text`,
         {
@@ -55,13 +58,12 @@ exports.onMessageCreated = onDocumentCreated(
         },
         {
           headers: {
-            token: `${INSTANCE_TOKEN}`,
+            token: INSTANCE_TOKEN,
             "Content-Type": "application/json",
           },
         },
       );
 
-      // Atualiza status
       await snap.ref.update({
         status: "sent",
         uazapiResponse: data,
@@ -81,94 +83,174 @@ exports.onMessageCreated = onDocumentCreated(
 /**
  * =========================================
  * 2️⃣ RECEBIMENTO: WhatsApp -> Firestore
- * Webhook do UAZAPI
  * =========================================
  */
-exports.uazapiWebhook = onRequest(
-  { region: "southamerica-east1" },
-  async (req, res) => {
+exports.uazapiWebhook = onRequest(async (req, res) => {
+  try {
+    const TENANT_ID = "zapcore-dev";
+    const data = req.body;
+    const message = data?.message;
+    const chat = data?.chat;
+
+    if (!message || !chat) {
+      return res.status(200).send("ignored-invalid-payload");
+    }
+
+    const phone = chat.phone.replace(/\D/g, "");
+    if (!phone) return res.status(200).send("ignored-invalid-phone");
+
+    if (message.wasSentByApi === true)
+      return res.status(200).send("ignored-api");
+    if (message.isGroup === true || chat.wa_isGroup === true)
+      return res.status(200).send("ignored-group");
+
+    const text = message.text || message.content || "";
+    const senderPhoto = chat.imagePreview || chat.image || null;
+    const senderName = message.senderName || null;
+
+    const messageId = message.id || `fallback_${phone}_${Date.now()}`;
+
+    const convId = `${TENANT_ID}_${phone}`;
+    const convRef = db.collection("conversations").doc(convId);
+    const convSnap = await convRef.get();
+
+    if (convSnap.exists) {
+      await convRef.update({
+        lastMessage: text || "[mídia]",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      await convRef.set({
+        id: convId,
+        phone,
+        tenantId: TENANT_ID,
+        status: "open",
+        assignedByName: senderName || null,
+        assignedTo: null,
+        lastMessage: text || "[mídia]",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        photo: senderPhoto || null,
+      });
+    }
+
+    await db
+      .collection("messages")
+      .doc(messageId)
+      .set({
+        conversationId: convId,
+        tenantId: TENANT_ID,
+        from: "client",
+        phone,
+        text,
+        type: message.type || "text",
+        senderName,
+        senderPhoto,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: message.messageTimestamp
+          ? new Date(message.messageTimestamp)
+          : admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+    return res.status(200).send("ok");
+  } catch (err) {
+    console.error("Erro webhook uazapi:", err);
+    return res.status(500).send("error");
+  }
+});
+
+/**
+ * =========================================
+ * 3️⃣ REFRESH MANUAL DA CONVERSA
+ * =========================================
+ */
+exports.refreshConversation = onRequest((req, res) => {
+  corsHandler(req, res, async () => {
     try {
       const TENANT_ID = "zapcore-dev";
-      const data = req.body;
-      const message = data?.message;
-      const chat = data?.chat;
+      const phone = req.query.phone;
 
-      if (!message || !chat) {
-        return res.status(200).send("ignored-invalid-payload");
+      if (!phone) {
+        return res.status(400).send("phone-required");
       }
 
-      // Seta Telefone
-      const phone = chat.phone.replace(/\D/g, '') || "Não localizado";
-      if (!phone) return res.status(200).send("ignored-invalid-phone");
+      const conversationId = `${TENANT_ID}_${phone}`;
 
-      // Seta Grupo ou mensagem enviada pela API
-      const wasSentByApi = message.wasSentByApi === true;
-      const isGroup = message.isGroup === true || chat.wa_isGroup === true;
-      if (wasSentByApi) return res.status(200).send("ignored-api");
-      if (isGroup) return res.status(200).send("ignored-group");
+      const result = await refreshChat({
+        conversationId,
+        phone,
+        limit: 10,
+      });
 
-      // Seta Texto
-      const text = message.text || message.content || "";
-
-      // Seta Foto URL
-      const senderPhoto = chat.imagePreview || chat.image || null;
-
-      // Nome do CONTATO
-      const senderName =
-        message.senderName || null;
-
-      //
-      const messageId =
-        message.id || `Erro Ao Trazer ID - ${phone}_${Date.now()}`;
-
-      // Verifica se a conversa EXISTE
-      const convId = `${TENANT_ID}_${phone}`;
-      const convRef = db.collection("conversations").doc(convId);
-      const convSnap = await convRef.get();
-
-      if (convSnap.exists) {
-        await convRef.update({
-          lastMessage: text || "[mídia]",
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-      } else {
-        await convRef.set({
-          id: convId,
-          phone,
-          tenantId: TENANT_ID,
-          status: "open",
-          assignedByName: senderName || null,
-          assignedTo: null,
-          lastMessage: text || "[mídia]",
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-          photo: senderPhoto || null,
-        });
-      }
-      
-      // Salva Mensagem
-      await db
-        .collection("messages")
-        .doc(messageId)
-        .set({
-          conversationId: convId,
-          tenantId: TENANT_ID,
-          from: "client",
-          phone,
-          text,
-          type: message.type || "text",
-          senderName,
-          senderPhoto,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          timestamp: message.messageTimestamp
-            ? new Date(message.messageTimestamp)
-            : admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-      return res.status(200).send("ok");
+      return res.status(200).json({
+        ok: true,
+        ...result,
+      });
     } catch (err) {
-      console.error("Erro webhook uazapi:", err);
+      console.error("Erro refresh chat:", err);
       return res.status(500).send("error");
     }
-  },
-);
+  });
+});
+
+/**
+ * =========================================
+ * 4️⃣ FUNÇÃO INTERNA refreshChat (NO INDEX)
+ * =========================================
+ */
+async function refreshChat({ conversationId, phone, limit = 10 }) {
+  const chatid = `${phone}@s.whatsapp.net`;
+
+  const { data } = await axios.post(
+    `${UAZAPI_BASE_URL}/message/find`,
+    {
+      chatid,
+      limit,
+      offset: 0,
+    },
+    {
+      headers: {
+        token: INSTANCE_TOKEN,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  const messages = data?.messages || [];
+  let saved = 0;
+
+  for (const msg of messages) {
+    if (!msg.id) continue;
+
+    const messageRef = db.collection("messages").doc(msg.id);
+
+    const exists = await messageRef.get();
+    if (exists.exists) continue;
+
+    const from = msg.fromMe ? "agent" : "client";
+    const text = msg.text || msg.content?.text || msg.content?.caption || "";
+
+    await messageRef.set({
+      conversationId,
+      tenantId: conversationId.split("_")[0],
+      from,
+      phone,
+      text,
+      type: msg.messageType || "text",
+      senderName: msg.senderName || null,
+      senderPhoto: null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: msg.messageTimestamp
+        ? new Date(msg.messageTimestamp)
+        : admin.firestore.FieldValue.serverTimestamp(),
+      source: "uazapi-refresh",
+    });
+
+    saved++;
+  }
+
+  return {
+    saved,
+    returned: messages.length,
+  };
+}

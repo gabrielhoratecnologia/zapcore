@@ -41,6 +41,64 @@
   color: #111827;
 }
 
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* --- BOTÃO REFRESH --- */
+.refresh-btn {
+  background: none;
+  border: none;
+  color: #8696a0;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+
+.refresh-btn:hover {
+  color: var(--color-primary);
+}
+
+.refresh-btn:disabled {
+  cursor: not-allowed;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+  color: var(--color-primary);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- BOTÃO INFO --- */
+.info-trigger-btn {
+  background: none;
+  border: none;
+  color: #8696a0;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.info-trigger-btn:hover {
+  color: #4b5563;
+}
+
 /* --- LISTA DE MENSAGENS --- */
 .chat-messages-list {
   flex: 1;
@@ -49,7 +107,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: #e5ddd5; /* Cor de fundo clássica WhatsApp */
+  background-color: #e5ddd5;
   scroll-behavior: smooth;
 }
 
@@ -170,7 +228,7 @@
   background: transparent;
 }
 
-/* --- CUSTOMIZAÇÃO DO EMOJI PICKER (ESTILO WHATSAPP) --- */
+/* --- EMOJI PICKER --- */
 .emoji-picker-wrapper {
   position: absolute;
   bottom: 75px;
@@ -183,7 +241,6 @@
   animation: emojiAppear 0.2s ease-out;
 }
 
-/* Resetando variáveis da biblioteca */
 .EmojiPickerReact {
   --epr-highlight-color: #00a884 !important;
   --epr-search-border-color: transparent !important;
@@ -193,16 +250,12 @@
   border: none !important;
 }
 
-/* Barra Superior de Categorias */
 .EmojiPickerReact .epr-category-nav {
   display: none;
 }
-
-/* Campo de Busca Estilo WhatsApp */
 .EmojiPickerReact .epr-search-container {
   padding: 10px 15px !important;
 }
-
 .EmojiPickerReact .epr-search {
   background-color: #f0f2f5 !important;
   border: none !important;
@@ -210,19 +263,6 @@
   padding: 10px 10px 10px 35px !important;
   font-size: 14px !important;
 }
-
-/* Títulos de seção (ex: "Natureza", "Recentes") */
-.EmojiPickerReact .epr-emoji-category-label {
-  font-weight: 500 !important;
-  font-size: 14px !important;
-  height: 40px !important;
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 15px !important;
-  text-transform: none !important;
-}
-
-/* Esconder o Preview e Mood que poluíam o visual */
 .EmojiPickerReact .epr-preview {
   display: none !important;
 }
@@ -297,15 +337,6 @@
 
 .save-details-btn:hover {
   background-color: #008f72;
-}
-
-.info-trigger-btn {
-  background: none;
-  border: none;
-  color: #8696a0;
-  font-size: 20px;
-  cursor: pointer;
-  margin-left: auto;
 }
 
 .chat-placeholder {

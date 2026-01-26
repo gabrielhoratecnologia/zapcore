@@ -75,7 +75,7 @@ export const useChat = (user) => {
         collection(db, "messages"),
         where("tenantId", "==", user.tenantId),
         where("conversationId", "==", conversationId),
-        orderBy("createdAt", "asc"),
+        orderBy("timestamp", "asc"),
       );
 
       return onSnapshot(q, (snapshot) => {
@@ -99,13 +99,14 @@ export const useChat = (user) => {
     try {
       const messageData = {
         conversationId: conversation.id,
-        phone: conversation.phone, // 🔥 ESSENCIAL
+        phone: conversation.phone,
         text,
         type: "text",
         from: "agent",
         userId: currentUserId,
         tenantId: user.tenantId,
         createdAt: serverTimestamp(),
+        timestamp: serverTimestamp(),
         media: null,
         status: "sending",
       };
