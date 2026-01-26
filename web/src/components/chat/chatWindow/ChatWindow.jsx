@@ -121,7 +121,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     <div className="chat-active-container">
       <div className="chat-active-header">
         <img
-          src={chat.avatar || initialsAvatar}
+          src={chat.photo || initialsAvatar}
           alt=""
           className="header-avatar"
           onError={(e) => (e.target.src = defaultAvatar)}

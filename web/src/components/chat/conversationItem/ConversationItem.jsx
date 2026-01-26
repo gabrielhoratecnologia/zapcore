@@ -23,17 +23,23 @@ const ConversationItem = ({ chat, active, onClick, onAccept }) => {
       // Define a cor da urgência
       if (diffInMins > 10) setUrgencyClass("urgent-critical");
       else if (diffInMins > 5) setUrgencyClass("urgent-warning");
+      else setUrgencyClass("");
     };
 
     calculateTime();
-    const interval = setInterval(calculateTime, 30000); // Atualiza a cada 30s
+    const interval = setInterval(calculateTime, 30000);
     return () => clearInterval(interval);
   }, [chat.updatedAt, isQueue]);
 
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
   const initialsAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    chat.name
+    chat.name || "Cliente",
   )}&background=random&color=fff`;
+
+  // PRIORIDADE: photo do Firebase → avatar salvo → iniciais → default
+  const avatarSrc =
+    chat.photo || chat.avatar || initialsAvatar || defaultAvatar;
 
   return (
     <div
@@ -44,11 +50,15 @@ const ConversationItem = ({ chat, active, onClick, onAccept }) => {
     >
       <div className="avatar-wrapper">
         <img
-          src={chat.avatar || initialsAvatar}
+          src={avatarSrc}
           alt={chat.name}
           className="chat-avatar"
-          onError={(e) => (e.target.src = defaultAvatar)}
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = defaultAvatar;
+          }}
         />
+
         {isQueue && <span className={`status-indicator ${urgencyClass}`} />}
       </div>
 
