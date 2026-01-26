@@ -69,7 +69,7 @@ const ConversationItem = ({ chat, active, onClick, onAccept }) => {
               <button
                 className="btn-accept"
                 onClick={(e) => {
-                  e.stopPropagation(); // Não seleciona o chat ao clicar no botão
+                  e.stopPropagation();
                   onAccept(chat.id);
                 }}
               >

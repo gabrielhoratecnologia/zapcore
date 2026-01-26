@@ -83,6 +83,10 @@ const Dashboard = () => {
     return <div className="loading-screen">Carregando dados do usuário...</div>;
   }
 
+  currentList.map((c) => {
+    console.log(c.phone)
+  })
+
   return (
     <div className="dashboard-wrapper">
       <Header userName={userData.name} userId={uid} />
@@ -138,7 +142,9 @@ const Dashboard = () => {
                       hour: "2-digit",
                       minute: "2-digit",
                     }),
-                  }}
+                    
+                  }
+                }
                   active={selectedChat?.id === c.id}
                   onClick={setSelectedChat}
                   onAccept={chat.assignConversation}
