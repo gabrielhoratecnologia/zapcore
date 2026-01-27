@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSmile, FaPaperPlane, FaInfoCircle, FaSync } from "react-icons/fa"; // Adicionado FaSync
+import { FaSmile, FaPaperPlane, FaInfoCircle, FaSync } from "react-icons/fa";
 import EmojiPicker, { EmojiStyle, Categories } from "emoji-picker-react";
 import DOMPurify from "dompurify";
 import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
-import axios from "axios"; // Certifique-se de ter o axios instalado
+import axios from "axios";
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
@@ -17,6 +17,28 @@ const formatWhatsAppText = (text) => {
   return DOMPurify.sanitize(rawHtml);
 };
 
+// -------- NOVO: Helpers de data --------
+const isSameDay = (d1, d2) =>
+  d1.getFullYear() === d2.getFullYear() &&
+  d1.getMonth() === d2.getMonth() &&
+  d1.getDate() === d2.getDate();
+
+const getDayLabel = (date) => {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (isSameDay(date, today)) return "HOJE";
+  if (isSameDay(date, yesterday)) return "ONTEM";
+
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+};
+// --------------------------------------
+
 const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
   const initialsAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -26,7 +48,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false); // Estado para o loading do refresh
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [tempBrideName, setTempBrideName] = useState("");
   const [tempWeddingDate, setTempWeddingDate] = useState("");
@@ -45,41 +67,14 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     setTempWeddingDate(details.weddingDate || "");
   }, [details]);
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
   }, [messages]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(event.target) &&
-        !event.target.closest(".emoji-trigger-btn")
-      ) {
-        setShowEmojiPicker(false);
-      }
-      if (
-        detailsRef.current &&
-        !detailsRef.current.contains(event.target) &&
-        !event.target.closest(".info-trigger-btn")
-      ) {
-        setShowDetails(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (!chat?.id) return;
     const unsubscribe = getMessages(chat.id);
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe && unsubscribe();
   }, [chat?.id, getMessages]);
 
   const onEmojiClick = (emojiData) => {
@@ -87,12 +82,11 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   };
 
   const handleSendMessage = async (e) => {
-    if (e) e.preventDefault();
-    if (newMessage.trim()) {
-      await sendMessage(chat, newMessage);
-      setNewMessage("");
-      setShowEmojiPicker(false);
-    }
+    e?.preventDefault();
+    if (!newMessage.trim()) return;
+    await sendMessage(chat, newMessage);
+    setNewMessage("");
+    setShowEmojiPicker(false);
   };
 
   const handleSaveDetails = async () => {
@@ -104,32 +98,34 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
     setShowDetails(false);
   };
 
-  // --- NOVA FUNÇÃO DE REFRESH ---
   const handleManualRefresh = async () => {
     if (isRefreshing || !chat?.phone) return;
-
     setIsRefreshing(true);
     try {
-      // Substitua pela URL real da sua Cloud Function após o deploy
-      const REFRESH_URL = `https://southamerica-east1-zapcore-581b0.cloudfunctions.net/refreshConversation`;
+      const REFRESH_URL =
+        "https://southamerica-east1-zapcore-581b0.cloudfunctions.net/refreshConversation";
       await axios.get(REFRESH_URL, { params: { phone: chat.phone } });
-    } catch (error) {
-      console.error("Erro ao sincronizar mensagens:", error);
+    } catch (err) {
+      console.error(err);
       alert("Erro ao sincronizar mensagens.");
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  if (!chat)
+  if (!chat) {
     return (
       <div className="chat-placeholder">
         <h2>Selecione uma conversa</h2>
       </div>
     );
+  }
+
+  let lastRenderedDate = null;
 
   return (
     <div className="chat-active-container">
+      {/* HEADER */}
       <div className="chat-active-header">
         <img
           src={chat.pho || initialsAvatar}
@@ -137,6 +133,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           className="header-avatar"
           onError={(e) => (e.target.src = defaultAvatar)}
         />
+
         <div className="header-info">
           <h4>
             {details.brideName || chat.name}{" "}
@@ -148,7 +145,6 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           <button
             className={`refresh-btn ${isRefreshing ? "spinning" : ""}`}
             onClick={handleManualRefresh}
-            title="Sincronizar mensagens"
             disabled={isRefreshing}
           >
             <FaSync />
@@ -163,124 +159,64 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
         </div>
       </div>
 
-      {showDetails && (
-        <div className="details-popover anim-fade-in" ref={detailsRef}>
-          <h5>Detalhes do Evento</h5>
-          <div className="details-field">
-            <label>Nome do Contato</label>
-            <input
-              type="text"
-              value={tempBrideName}
-              onChange={(e) => setTempBrideName(e.target.value)}
-              placeholder="Nome da noiva..."
-            />
-          </div>
-          <div className="details-field">
-            <label>Data do Evento</label>
-            <input
-              type="date"
-              value={tempWeddingDate}
-              onChange={(e) => setTempWeddingDate(e.target.value)}
-            />
-          </div>
-          <div className="details-field">
-            <label>Histórico de Notas</label>
-            <div className="notes-history">
-              {details.notes && details.notes.length > 0 ? (
-                [...details.notes].reverse().map((note) => (
-                  <div key={note.id} className="note-item">
-                    <small>{note.createdAt}:</small> {note.text}
-                  </div>
-                ))
-              ) : (
-                <p style={{ fontSize: "11px", color: "#999" }}>
-                  Nenhuma nota salva.
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="details-field">
-            <label>Adicionar Nota</label>
-            <textarea
-              rows="2"
-              value={newNoteText}
-              onChange={(e) => setNewNoteText(e.target.value)}
-              placeholder="Digite observações importantes..."
-            />
-          </div>
-          <button
-            className="save-details-btn"
-            onClick={handleSaveDetails}
-            disabled={loading}
-          >
-            {loading ? "Salvando..." : "Salvar Alterações"}
-          </button>
-        </div>
-      )}
-
+      {/* MENSAGENS */}
       <div className="chat-messages-list">
-        {messages.map((msg, idx) => (
-          <div
-            key={msg.id || idx}
-            className={`msg-row ${
-              msg.from === MESSAGE_FROM.AGENT ? "sent" : "received"
-            }`}
-          >
-            <div className="msg-bubble">
-              <p
-                dangerouslySetInnerHTML={{
-                  __html: formatWhatsAppText(msg.text),
-                }}
-              />
-              <span className="msg-time">
-                {msg.createdAt?.toDate().toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+        {messages.map((msg, idx) => {
+          const msgDate = msg.timestamp?.toDate();
+          let showDateSeparator = false;
+
+          if (msgDate) {
+            if (!lastRenderedDate || !isSameDay(msgDate, lastRenderedDate)) {
+              showDateSeparator = true;
+              lastRenderedDate = msgDate;
+            }
+          }
+
+          return (
+            <div key={msg.id || idx}>
+              {showDateSeparator && msgDate && (
+                <div className="date-separator">
+                  <span>{getDayLabel(msgDate)}</span>
+                </div>
+              )}
+
+              <div
+                className={`msg-row ${
+                  msg.from === MESSAGE_FROM.AGENT ? "sent" : "received"
+                }`}
+              >
+                <div className="msg-bubble">
+                  <p
+                    dangerouslySetInnerHTML={{
+                      __html: formatWhatsAppText(msg.text),
+                    }}
+                  />
+                  <span className="msg-time">
+                    {msgDate?.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
         <div ref={messagesEndRef} />
       </div>
 
+      {/* FOOTER */}
       <footer className="chat-footer">
         {showEmojiPicker && (
-          <div
-            className="emoji-picker-wrapper anim-fade-in"
-            ref={emojiPickerRef}
-          >
+          <div className="emoji-picker-wrapper" ref={emojiPickerRef}>
             <EmojiPicker
               onEmojiClick={onEmojiClick}
-              autoFocusSearch={false}
-              theme="light"
               emojiStyle={EmojiStyle.NATIVE}
-              searchPlaceholder="Pesquisar emoji"
+              autoFocusSearch={false}
               width="350px"
               height="400px"
-              previewConfig={{
-                showPreview: false,
-              }}
-              categories={[
-                { category: Categories.SUGGESTED, name: "Recentes" },
-                {
-                  category: Categories.SMILEYS_PEOPLE,
-                  name: "Smileys e Pessoas",
-                },
-                {
-                  category: Categories.ANIMALS_NATURE,
-                  name: "Animais e Natureza",
-                },
-                { category: Categories.FOOD_DRINK, name: "Comida e Bebida" },
-                {
-                  category: Categories.TRAVEL_PLACES,
-                  name: "Viagens e Lugares",
-                },
-                { category: Categories.ACTIVITIES, name: "Atividades" },
-                { category: Categories.OBJECTS, name: "Objetos" },
-                { category: Categories.SYMBOLS, name: "Símbolos" },
-                { category: Categories.FLAGS, name: "Bandeiras" },
-              ]}
+              previewConfig={{ showPreview: false }}
             />
           </div>
         )}
@@ -293,6 +229,7 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
           >
             <FaSmile />
           </button>
+
           <form className="message-form" onSubmit={handleSendMessage}>
             <input
               type="text"
