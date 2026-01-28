@@ -165,6 +165,15 @@ exports.uazapiWebhook = onRequest(async (req, res) => {
  * =========================================
  */
 exports.refreshConversation = onRequest((req, res) => {
+  console.log("REFRESH FUNCTION HIT (RAW)", {
+    method: req.method,
+    query: req.query,
+  });
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).send("");
+  }
+
   corsHandler(req, res, async () => {
     try {
       const TENANT_ID = "zapcore-dev";
@@ -198,32 +207,56 @@ exports.refreshConversation = onRequest((req, res) => {
  * 4️⃣ FUNÇÃO INTERNA refreshChat (NO INDEX)
  * =========================================
  */
-async function refreshChat({ conversationId, phone, limit = 10 }) {
+async function refreshChat({
+  conversationId,
+  phone,
+  limit = 10,
+  maxTotal = 100,
+}) {
   const chatid = `${phone}@s.whatsapp.net`;
 
-  const { data } = await axios.post(
-    `${UAZAPI_BASE_URL}/message/find`,
-    {
-      chatid,
-      limit,
-      offset: 0,
-    },
-    {
-      headers: {
-        token: INSTANCE_TOKEN,
-        "Content-Type": "application/json",
-      },
-    },
-  );
+  let allMessages = [];
+  let offset = 0;
 
-  const messages = data?.messages || [];
+  while (allMessages.length < maxTotal) {
+    const { data } = await axios.post(
+      `${UAZAPI_BASE_URL}/message/find`,
+      {
+        chatid,
+        limit,
+        offset,
+      },
+      {
+        headers: {
+          token: INSTANCE_TOKEN,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    const messages = data?.messages || [];
+
+    if (messages.length === 0) break;
+
+    allMessages = allMessages.concat(messages);
+    offset = data.nextOffset ?? offset + limit;
+
+    if (messages.length < limit) break;
+
+    console.log("UAZAPI FETCH", {
+      offset,
+      count: messages.length,
+      firstId: messages[0]?.id,
+      lastId: messages[messages.length - 1]?.id,
+    });
+  }
+
   let saved = 0;
 
-  for (const msg of messages) {
+  for (const msg of allMessages) {
     if (!msg.id) continue;
 
     const messageRef = db.collection("messages").doc(msg.id);
-
     const exists = await messageRef.get();
     if (exists.exists) continue;
 
@@ -251,6 +284,64 @@ async function refreshChat({ conversationId, phone, limit = 10 }) {
 
   return {
     saved,
-    returned: messages.length,
+    returned: allMessages.length,
   };
 }
+
+exports.syncChatsFromUazapi = onRequest(async (req, res) => {
+  try {
+    const TENANT_ID = "zapcore-dev";
+
+    let offset = 0;
+    const limit = 50;
+    let total = 0;
+
+    while (true) {
+      const { data } = await axios.post(
+        `${UAZAPI_BASE_URL}/chat/find`,
+        { limit, offset },
+        { headers: { token: INSTANCE_TOKEN } },
+      );
+
+      const chats = data?.chats || [];
+      if (!chats.length) break;
+
+      for (const chat of chats) {
+        const phone = chat.phone?.replace(/\D/g, "");
+        if (!phone) continue;
+
+        const convId = `${TENANT_ID}_${phone}`;
+        const convRef = db.collection("conversations").doc(convId);
+        const snap = await convRef.get();
+
+        const payload = {
+          id: convId,
+          phone,
+          tenantId: TENANT_ID,
+          importedFrom: "uazapi-chat-find",
+          historyComplete: false,
+          lastMessage: chat.wa_lastMessage || null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+
+        if (!snap.exists) {
+          await convRef.set({
+            ...payload,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          total++;
+        } else {
+          await convRef.update(payload);
+        }
+      }
+
+      if (!data.pagination?.hasNextPage) break;
+      offset += limit;
+    }
+
+    return res.json({ ok: true, imported: total });
+  } catch (err) {
+    console.error("syncChats error:", err);
+    return res.status(500).send("error");
+  }
+});

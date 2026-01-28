@@ -11,6 +11,9 @@ import {
   doc,
   updateDoc,
   or,
+  getDocs,
+  endBefore,
+  limitToLast,
 } from "firebase/firestore";
 
 export const useChat = (user) => {
@@ -18,8 +21,11 @@ export const useChat = (user) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingError, setSendingError] = useState(null);
+  const [oldestDoc, setOldestDoc] = useState(null);
+  const [realtimeUnsub, setRealtimeUnsub] = useState(null);
+  const [lastTimestamp, setLastTimestamp] = useState(null);
+  const [messagesCache, setMessagesCache] = useState({});
 
-  // 1️⃣ Buscar Conversas
   useEffect(() => {
     if (!user || (!user.id && !user.uid)) {
       setConversations([]);
@@ -66,30 +72,167 @@ export const useChat = (user) => {
     }
   }, [user]);
 
-  // 2️⃣ Buscar Mensagens
-  const getMessages = useCallback(
-    (conversationId) => {
+  const loadLastMessages = useCallback(
+    async (conversationId) => {
       if (!conversationId || !user?.tenantId) return;
+
+      if (realtimeUnsub) {
+        realtimeUnsub();
+        setRealtimeUnsub(null);
+      }
+
+      if (messagesCache[conversationId]) {
+        const cached = messagesCache[conversationId];
+        setMessages(cached);
+        setOldestDoc(cached[0]?._docRef || null);
+        console.log("CACHED OLDEST:", cached[0]?.id);
+        return;
+      }
 
       const q = query(
         collection(db, "messages"),
         where("tenantId", "==", user.tenantId),
         where("conversationId", "==", conversationId),
         orderBy("timestamp", "asc"),
+        orderBy("__name__", "asc"),
+        limitToLast(30),
       );
 
-      return onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setMessages(data);
-      });
+      const snap = await getDocs(q);
+
+      console.log(
+        "SNAP IDS (LAST):",
+        snap.docs.map((d) => d.id),
+      );
+
+      const msgs = snap.docs.map((d) => ({
+        id: d.id,
+        _docRef: d,
+        ...d.data(),
+      }));
+
+      const last = msgs[msgs.length - 1];
+      setLastTimestamp(last?.timestamp || null);
+
+      setMessages(msgs);
+
+      // 🔥 use SEMPRE do snap
+      setOldestDoc(snap.docs[0] || null);
+      console.log("NOVO OLDEST (LAST):", snap.docs[0]?.id);
+
+      setMessagesCache((prev) => ({
+        ...prev,
+        [conversationId]: msgs,
+      }));
     },
-    [user?.tenantId],
+    [user?.tenantId, realtimeUnsub, messagesCache],
   );
 
-  // 3️⃣ Enviar Mensagem (SÓ FIRESTORE)
+  const listenNewMessages = useCallback(
+    (conversationId) => {
+      if (!conversationId || !user?.tenantId || !lastTimestamp) return;
+
+      const q = query(
+        collection(db, "messages"),
+        where("tenantId", "==", user.tenantId),
+        where("conversationId", "==", conversationId),
+        where("timestamp", ">", lastTimestamp),
+        orderBy("timestamp", "asc"),
+        orderBy("__name__", "asc"),
+      );
+
+      const unsub = onSnapshot(q, (snap) => {
+        const added = snap
+          .docChanges()
+          .filter((c) => c.type === "added")
+          .map((c) => ({ id: c.doc.id, ...c.doc.data() }));
+
+        if (added.length) {
+          setMessages((prev) => {
+            const ids = new Set(prev.map((m) => m.id));
+            const filtered = added.filter((m) => !ids.has(m.id));
+            return [...prev, ...filtered];
+          });
+          const last = added[added.length - 1];
+          setLastTimestamp(last.timestamp);
+        }
+      });
+
+      setRealtimeUnsub(() => unsub);
+      return unsub;
+    },
+    [user?.tenantId, lastTimestamp],
+  );
+
+  const loadOlderMessages = useCallback(
+    async (conversationId, containerRef) => {
+      if (!oldestDoc || !conversationId || !user?.tenantId) {
+        console.log("PAGINAÇÃO BLOQUEADA", {
+          hasOldest: !!oldestDoc,
+          conversationId,
+        });
+        return;
+      }
+
+      console.log("LOAD OLDER CURSOR:", oldestDoc.id);
+
+      const container = containerRef?.current;
+      const prevScrollHeight = container?.scrollHeight || 0;
+
+      const q = query(
+        collection(db, "messages"),
+        where("tenantId", "==", user.tenantId),
+        where("conversationId", "==", conversationId),
+        orderBy("timestamp", "asc"),
+        orderBy("__name__", "asc"),
+        endBefore(oldestDoc), // 🔥 CURSOR REAL
+        limitToLast(30),
+      );
+
+      const snap = await getDocs(q);
+
+      console.log(
+        "SNAP IDS (OLDER):",
+        snap.docs.map((d) => d.id),
+      );
+
+      if (snap.empty) {
+        console.log("SEM MAIS MENSAGENS ANTIGAS");
+        return;
+      }
+
+      const older = snap.docs.map((d) => ({
+        id: d.id,
+        _docRef: d,
+        ...d.data(),
+      }));
+
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        const filteredOlder = older.filter((m) => !existingIds.has(m.id));
+
+        const merged = [...filteredOlder, ...prev];
+
+        setMessagesCache((cache) => ({
+          ...cache,
+          [conversationId]: merged,
+        }));
+
+        return merged;
+      });
+
+      setOldestDoc(snap.docs[0] || null);
+      console.log("NOVO OLDEST (OLDER):", snap.docs[0]?.id);
+
+      requestAnimationFrame(() => {
+        if (!container) return;
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = newScrollHeight - prevScrollHeight;
+      });
+    },
+    [oldestDoc, user?.tenantId],
+  );
+
   const sendMessage = async (conversation, text) => {
     if (!text.trim() || !user) return;
 
@@ -124,7 +267,6 @@ export const useChat = (user) => {
     }
   };
 
-  // 4️⃣ Assumir Atendimento
   const assignConversation = async (conversationId) => {
     const currentUserId = user.uid || user.id;
 
@@ -144,7 +286,9 @@ export const useChat = (user) => {
   return {
     conversations,
     messages,
-    getMessages,
+    loadLastMessages,
+    listenNewMessages,
+    loadOlderMessages,
     sendMessage,
     assignConversation,
     loading,

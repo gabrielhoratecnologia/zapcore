@@ -83,10 +83,6 @@ const Dashboard = () => {
     return <div className="loading-screen">Carregando dados do usuário...</div>;
   }
 
-  currentList.map((c) => {
-    console.log(c.phone)
-  })
-
   return (
     <div className="dashboard-wrapper">
       <Header userName={userData.name} userId={uid} />
@@ -165,9 +161,10 @@ const Dashboard = () => {
         <section className="chat-section">
           <ChatWindow
             chat={selectedChat}
-            user={userData}
             messages={chat.messages}
-            getMessages={chat.getMessages}
+            loadLastMessages={chat.loadLastMessages}
+            listenNewMessages={chat.listenNewMessages}
+            loadOlderMessages={chat.loadOlderMessages}
             sendMessage={chat.sendMessage}
           />
         </section>

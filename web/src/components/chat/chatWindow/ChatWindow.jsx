@@ -39,7 +39,14 @@ const getDayLabel = (date) => {
 };
 // --------------------------------------
 
-const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
+const ChatWindow = ({
+  chat,
+  messages,
+  loadLastMessages,
+  listenNewMessages,
+  loadOlderMessages,
+  sendMessage,
+}) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
   const initialsAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
     chat?.name || "",
@@ -57,10 +64,25 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
   const emojiPickerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const detailsRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
   const { details, updateGeneralDetails, addNote, loading } = useChatDetails(
     chat?.id,
   );
+
+  const handleLoadOlder = async () => {
+    if (isLoadingOlder) return;
+
+    setIsLoadingOlder(true);
+    try {
+      await loadOlderMessages(chat.id, messagesContainerRef);
+    } catch (err) {
+      console.error("Erro ao carregar mensagens antigas", err);
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
 
   useEffect(() => {
     setTempBrideName(details.brideName || "");
@@ -73,9 +95,29 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
 
   useEffect(() => {
     if (!chat?.id) return;
-    const unsubscribe = getMessages(chat.id);
-    return () => unsubscribe && unsubscribe();
-  }, [chat?.id, getMessages]);
+
+    loadLastMessages(chat.id);
+  }, [chat?.id]);
+
+  const listenerRef = useRef(null);
+
+  useEffect(() => {
+    if (!chat?.id) return;
+    if (listenerRef.current) {
+      listenerRef.current();
+      listenerRef.current = null;
+    }
+
+    const unsubscribe = listenNewMessages(chat.id);
+    listenerRef.current = unsubscribe;
+
+    return () => {
+      if (listenerRef.current) {
+        listenerRef.current();
+        listenerRef.current = null;
+      }
+    };
+  }, [chat?.id]);
 
   const onEmojiClick = (emojiData) => {
     setNewMessage((prev) => prev + emojiData.emoji);
@@ -160,7 +202,25 @@ const ChatWindow = ({ chat, user, messages, getMessages, sendMessage }) => {
       </div>
 
       {/* MENSAGENS */}
-      <div className="chat-messages-list">
+      <div className="chat-messages-list" ref={messagesContainerRef}>
+        {/* BOTÃO CARREGAR MAIS */}
+        <div className="load-older-wrapper">
+          <button
+            className="load-older-btn"
+            onClick={handleLoadOlder}
+            disabled={isLoadingOlder}
+          >
+            {isLoadingOlder ? (
+              <>
+                <FaSync className="load-older-spinner" />
+                Carregando...
+              </>
+            ) : (
+              "Carregar mensagens anteriores"
+            )}
+          </button>
+        </div>
+
         {messages.map((msg, idx) => {
           const msgDate = msg.timestamp?.toDate();
           let showDateSeparator = false;
