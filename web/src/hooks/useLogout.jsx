@@ -14,7 +14,6 @@ export function useLogout() {
       localStorage.clear();
       sessionStorage.clear();
 
-      // 3️⃣ Redireciona para a tela de login
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Erro ao fazer logout:", error);

@@ -3,6 +3,7 @@ import Header from "../../components/header/Header.jsx";
 import { useAuth } from "../../hooks/useAuth.jsx";
 import { useUser } from "../../hooks/useUser.jsx";
 import { useChat } from "../../hooks/useChat.jsx";
+import { useLogout } from "../../hooks/useLogout.jsx";
 import ConversationItem from "../../components/chat/conversationItem/ConversationItem.jsx";
 import ChatWindow from "../../components/chat/chatWindow/ChatWindow.jsx";
 import "./Dashboard.css";
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const { uid } = useAuth();
   const { userData } = useUser(uid);
   const chat = useChat(userData ?? null);
+  const { logout } = useLogout()
 
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,7 +43,7 @@ const Dashboard = () => {
   };
 
   const currentList = filterBySearch(
-    activeTab === "chats" ? myConversations : conversationsInQueue
+    activeTab === "chats" ? myConversations : conversationsInQueue,
   );
 
   // Lógica de Áudio e Notificações
@@ -85,7 +87,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-      <Header userName={userData.name} userId={uid} />
+      <Header userName={userData.name} userId={uid} onLogout={logout} />
 
       <div className="dashboard-main">
         <aside className="sidebar-section">
@@ -138,9 +140,7 @@ const Dashboard = () => {
                       hour: "2-digit",
                       minute: "2-digit",
                     }),
-                    
-                  }
-                }
+                  }}
                   active={selectedChat?.id === c.id}
                   onClick={setSelectedChat}
                   onAccept={chat.assignConversation}
@@ -166,6 +166,7 @@ const Dashboard = () => {
             listenNewMessages={chat.listenNewMessages}
             loadOlderMessages={chat.loadOlderMessages}
             sendMessage={chat.sendMessage}
+            refreshFromUazapi={chat.refreshFromUazapi}
           />
         </section>
       </div>

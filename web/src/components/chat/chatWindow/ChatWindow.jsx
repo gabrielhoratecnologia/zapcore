@@ -45,6 +45,7 @@ const ChatWindow = ({
   loadLastMessages,
   listenNewMessages,
   loadOlderMessages,
+  refreshFromUazapi,
   sendMessage,
 }) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -76,9 +77,13 @@ const ChatWindow = ({
 
     setIsLoadingOlder(true);
     try {
-      await loadOlderMessages(chat.id, messagesContainerRef);
-    } catch (err) {
-      console.error("Erro ao carregar mensagens antigas", err);
+      if (!messages.length) {
+        // 🔥 primeira vez = força refresh
+        await refreshFromUazapi(chat);
+        await loadLastMessages(chat.id, chat);
+      } else {
+        await loadOlderMessages(chat.id, messagesContainerRef);
+      }
     } finally {
       setIsLoadingOlder(false);
     }
@@ -140,21 +145,6 @@ const ChatWindow = ({
     setShowDetails(false);
   };
 
-  const handleManualRefresh = async () => {
-    if (isRefreshing || !chat?.phone) return;
-    setIsRefreshing(true);
-    try {
-      const REFRESH_URL =
-        "https://southamerica-east1-zapcore-581b0.cloudfunctions.net/refreshConversation";
-      await axios.get(REFRESH_URL, { params: { phone: chat.phone } });
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao sincronizar mensagens.");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   if (!chat) {
     return (
       <div className="chat-placeholder">
@@ -184,14 +174,6 @@ const ChatWindow = ({
         </div>
 
         <div className="header-actions">
-          <button
-            className={`refresh-btn ${isRefreshing ? "spinning" : ""}`}
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-          >
-            <FaSync />
-          </button>
-
           <button
             className="info-trigger-btn"
             onClick={() => setShowDetails(!showDetails)}

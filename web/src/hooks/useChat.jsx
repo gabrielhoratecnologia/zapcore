@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+
 import { db } from "../firebase.js";
 import {
   collection,
@@ -73,7 +75,7 @@ export const useChat = (user) => {
   }, [user]);
 
   const loadLastMessages = useCallback(
-    async (conversationId) => {
+    async (conversationId, conversation = null) => {
       if (!conversationId || !user?.tenantId) return;
 
       if (realtimeUnsub) {
@@ -81,10 +83,12 @@ export const useChat = (user) => {
         setRealtimeUnsub(null);
       }
 
+      // CACHE
       if (messagesCache[conversationId]) {
         const cached = messagesCache[conversationId];
         setMessages(cached);
         setOldestDoc(cached[0]?._docRef || null);
+        setLastTimestamp(cached[cached.length - 1]?.timestamp || null);
         console.log("CACHED OLDEST:", cached[0]?.id);
         return;
       }
@@ -98,12 +102,45 @@ export const useChat = (user) => {
         limitToLast(30),
       );
 
-      const snap = await getDocs(q);
+      let snap = await getDocs(q);
 
       console.log(
         "SNAP IDS (LAST):",
         snap.docs.map((d) => d.id),
       );
+
+      // ===============================
+      // 🔥 SEM MENSAGENS → REFRESH UAZAPI
+      // ===============================
+      if (snap.empty) {
+        console.log("SEM MENSAGENS LOCAIS, CHAMANDO REFRESH UAZAPI");
+
+        try {
+          const phone = conversation?.phone || conversationId.split("_")[1];
+
+          await axios.get(
+            `https://refreshconversation-f5rtddkuva-rj.a.run.app/refreshConversation?phone=${phone}`,
+          );
+
+          // 🔁 Requery após refresh
+          snap = await getDocs(q);
+
+          console.log(
+            "SNAP IDS (APÓS REFRESH):",
+            snap.docs.map((d) => d.id),
+          );
+        } catch (err) {
+          console.error("Erro ao refresh Uazapi:", err);
+        }
+      }
+
+      if (snap.empty) {
+        console.log("SEM HISTÓRICO MESMO APÓS REFRESH");
+        setMessages([]);
+        setOldestDoc(null);
+        setLastTimestamp(null);
+        return;
+      }
 
       const msgs = snap.docs.map((d) => ({
         id: d.id,
@@ -112,18 +149,17 @@ export const useChat = (user) => {
       }));
 
       const last = msgs[msgs.length - 1];
-      setLastTimestamp(last?.timestamp || null);
 
       setMessages(msgs);
-
-      // 🔥 use SEMPRE do snap
-      setOldestDoc(snap.docs[0] || null);
-      console.log("NOVO OLDEST (LAST):", snap.docs[0]?.id);
+      setOldestDoc(snap.docs[0]); // 🔥 cursor real
+      setLastTimestamp(last?.timestamp || null);
 
       setMessagesCache((prev) => ({
         ...prev,
         [conversationId]: msgs,
       }));
+
+      console.log("NOVO OLDEST (LAST):", snap.docs[0]?.id);
     },
     [user?.tenantId, realtimeUnsub, messagesCache],
   );
@@ -166,6 +202,7 @@ export const useChat = (user) => {
 
   const loadOlderMessages = useCallback(
     async (conversationId, containerRef) => {
+      console.log(oldestDoc);
       if (!oldestDoc || !conversationId || !user?.tenantId) {
         console.log("PAGINAÇÃO BLOQUEADA", {
           hasOldest: !!oldestDoc,
@@ -283,6 +320,17 @@ export const useChat = (user) => {
     }
   };
 
+  const refreshFromUazapi = async (conversation) => {
+    try {
+      await axios.get(
+        `https://refreshconversation-f5rtddkuva-rj.a.run.app/refreshConversation?phone=${conversation.phone}`,
+      );
+    } catch (err) {
+      console.error("Erro ao refresh Uazapi", err);
+      throw err;
+    }
+  };
+
   return {
     conversations,
     messages,
@@ -291,6 +339,7 @@ export const useChat = (user) => {
     loadOlderMessages,
     sendMessage,
     assignConversation,
+    refreshFromUazapi,
     loading,
     sendingError,
   };
