@@ -89,7 +89,6 @@ export const useChat = (user) => {
         setMessages(cached);
         setOldestDoc(cached[0]?._docRef || null);
         setLastTimestamp(cached[cached.length - 1]?.timestamp || null);
-        console.log("CACHED OLDEST:", cached[0]?.id);
         return;
       }
 
@@ -104,17 +103,10 @@ export const useChat = (user) => {
 
       let snap = await getDocs(q);
 
-      console.log(
-        "SNAP IDS (LAST):",
-        snap.docs.map((d) => d.id),
-      );
-
       // ===============================
       // 🔥 SEM MENSAGENS → REFRESH UAZAPI
       // ===============================
       if (snap.empty) {
-        console.log("SEM MENSAGENS LOCAIS, CHAMANDO REFRESH UAZAPI");
-
         try {
           const phone = conversation?.phone || conversationId.split("_")[1];
 
@@ -124,18 +116,12 @@ export const useChat = (user) => {
 
           // 🔁 Requery após refresh
           snap = await getDocs(q);
-
-          console.log(
-            "SNAP IDS (APÓS REFRESH):",
-            snap.docs.map((d) => d.id),
-          );
         } catch (err) {
           console.error("Erro ao refresh Uazapi:", err);
         }
       }
 
       if (snap.empty) {
-        console.log("SEM HISTÓRICO MESMO APÓS REFRESH");
         setMessages([]);
         setOldestDoc(null);
         setLastTimestamp(null);
@@ -158,8 +144,6 @@ export const useChat = (user) => {
         ...prev,
         [conversationId]: msgs,
       }));
-
-      console.log("NOVO OLDEST (LAST):", snap.docs[0]?.id);
     },
     [user?.tenantId, realtimeUnsub, messagesCache],
   );
@@ -211,8 +195,6 @@ export const useChat = (user) => {
         return;
       }
 
-      console.log("LOAD OLDER CURSOR:", oldestDoc.id);
-
       const container = containerRef?.current;
       const prevScrollHeight = container?.scrollHeight || 0;
 
@@ -222,19 +204,13 @@ export const useChat = (user) => {
         where("conversationId", "==", conversationId),
         orderBy("timestamp", "asc"),
         orderBy("__name__", "asc"),
-        endBefore(oldestDoc), // 🔥 CURSOR REAL
+        endBefore(oldestDoc),
         limitToLast(30),
       );
 
       const snap = await getDocs(q);
 
-      console.log(
-        "SNAP IDS (OLDER):",
-        snap.docs.map((d) => d.id),
-      );
-
       if (snap.empty) {
-        console.log("SEM MAIS MENSAGENS ANTIGAS");
         return;
       }
 
@@ -259,7 +235,6 @@ export const useChat = (user) => {
       });
 
       setOldestDoc(snap.docs[0] || null);
-      console.log("NOVO OLDEST (OLDER):", snap.docs[0]?.id);
 
       requestAnimationFrame(() => {
         if (!container) return;

@@ -3,8 +3,6 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const axios = require("axios");
-const cors = require("cors");
-const corsHandler = cors({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -13,6 +11,7 @@ setGlobalOptions({ region: "southamerica-east1" });
 
 const UAZAPI_BASE_URL = "https://zapcore.uazapi.com";
 const INSTANCE_TOKEN = "a7a49f16-1b09-4c8b-9215-587866361757";
+const TENANT_ID = "zapcore-dev";
 
 /**
  * =========================================
@@ -22,7 +21,6 @@ const INSTANCE_TOKEN = "a7a49f16-1b09-4c8b-9215-587866361757";
 exports.onMessageCreated = onDocumentCreated(
   {
     document: "messages/{messageId}",
-    region: "southamerica-east1",
     invoker: "public",
   },
   async (event) => {
@@ -31,19 +29,15 @@ exports.onMessageCreated = onDocumentCreated(
 
     const msg = snap.data();
 
-    if (msg.uazapiResponse) return;
-
+    // só mensagens do agente
     if (msg.from !== "agent") return;
 
-    if (msg.source === "uazapi-refresh") {
-      console.log("Ignorando mensagem de refresh:", snap.id);
-      return;
-    }
+    // evita loop
+    if (msg.uazapiResponse) return;
 
     try {
       const convRef = db.collection("conversations").doc(msg.conversationId);
       const convSnap = await convRef.get();
-
       if (!convSnap.exists) return;
 
       const { phone } = convSnap.data();
@@ -61,7 +55,7 @@ exports.onMessageCreated = onDocumentCreated(
             token: INSTANCE_TOKEN,
             "Content-Type": "application/json",
           },
-        },
+        }
       );
 
       await snap.ref.update({
@@ -69,15 +63,15 @@ exports.onMessageCreated = onDocumentCreated(
         uazapiResponse: data,
         sentAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-    } catch (error) {
-      console.error("Erro ao enviar WhatsApp:", error?.response?.data || error);
+    } catch (err) {
+      console.error("Erro envio WhatsApp:", err?.response?.data || err);
 
       await snap.ref.update({
         status: "error",
-        errorMessage: error.message || "Erro ao enviar",
+        errorMessage: err.message || "Erro ao enviar",
       });
     }
-  },
+  }
 );
 
 /**
@@ -87,7 +81,6 @@ exports.onMessageCreated = onDocumentCreated(
  */
 exports.uazapiWebhook = onRequest(async (req, res) => {
   try {
-    const TENANT_ID = "zapcore-dev";
     const data = req.body;
     const message = data?.message;
     const chat = data?.chat;
@@ -96,252 +89,68 @@ exports.uazapiWebhook = onRequest(async (req, res) => {
       return res.status(200).send("ignored-invalid-payload");
     }
 
-    const phone = chat.phone.replace(/\D/g, "");
-    if (!phone) return res.status(200).send("ignored-invalid-phone");
-
-    if (message.wasSentByApi === true)
+    // ignora mensagens enviadas pela API
+    if (message.wasSentByApi === true) {
       return res.status(200).send("ignored-api");
-    if (message.isGroup === true || chat.wa_isGroup === true)
+    }
+
+    // ignora grupos
+    if (message.isGroup === true || chat.wa_isGroup === true) {
       return res.status(200).send("ignored-group");
+    }
+
+    const phone = chat.phone?.replace(/\D/g, "");
+    if (!phone) {
+      return res.status(200).send("ignored-invalid-phone");
+    }
 
     const text = message.text || message.content || "";
-    const senderPhoto = chat.imagePreview || chat.image || null;
     const senderName = message.senderName || null;
+    const senderPhoto = chat.imagePreview || chat.image || null;
 
-    const messageId = message.id || `fallback_${phone}_${Date.now()}`;
-
-    const convId = `${TENANT_ID}_${phone}`;
-    const convRef = db.collection("conversations").doc(convId);
+    const conversationId = `${TENANT_ID}_${phone}`;
+    const convRef = db.collection("conversations").doc(conversationId);
     const convSnap = await convRef.get();
 
-    if (convSnap.exists) {
+    if (!convSnap.exists) {
+      await convRef.set({
+        id: conversationId,
+        phone,
+        tenantId: TENANT_ID,
+        status: "open",
+        assignedTo: null,
+        lastMessage: text || "[mídia]",
+        photo: senderPhoto,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
       await convRef.update({
         lastMessage: text || "[mídia]",
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
-    } else {
-      await convRef.set({
-        id: convId,
-        phone,
-        tenantId: TENANT_ID,
-        status: "open",
-        assignedByName: senderName || null,
-        assignedTo: null,
-        lastMessage: text || "[mídia]",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        photo: senderPhoto || null,
-      });
     }
 
-    await db
-      .collection("messages")
-      .doc(messageId)
-      .set({
-        conversationId: convId,
-        tenantId: TENANT_ID,
-        from: "client",
-        phone,
-        text,
-        type: message.type || "text",
-        senderName,
-        senderPhoto,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        timestamp: message.messageTimestamp
-          ? new Date(message.messageTimestamp)
-          : admin.firestore.FieldValue.serverTimestamp(),
-      });
+    const messageId = message.id || `${phone}_${Date.now()}`;
+
+    await db.collection("messages").doc(messageId).set({
+      conversationId,
+      tenantId: TENANT_ID,
+      from: "client",
+      phone,
+      text,
+      type: message.type || "text",
+      senderName,
+      senderPhoto,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: message.messageTimestamp
+        ? new Date(message.messageTimestamp)
+        : admin.firestore.FieldValue.serverTimestamp(),
+    });
 
     return res.status(200).send("ok");
   } catch (err) {
     console.error("Erro webhook uazapi:", err);
-    return res.status(500).send("error");
-  }
-});
-
-/**
- * =========================================
- * 3️⃣ REFRESH MANUAL DA CONVERSA
- * =========================================
- */
-exports.refreshConversation = onRequest((req, res) => {
-  console.log("REFRESH FUNCTION HIT (RAW)", {
-    method: req.method,
-    query: req.query,
-  });
-
-  if (req.method === "OPTIONS") {
-    return res.status(204).send("");
-  }
-
-  corsHandler(req, res, async () => {
-    try {
-      const TENANT_ID = "zapcore-dev";
-      const phone = req.query.phone;
-
-      if (!phone) {
-        return res.status(400).send("phone-required");
-      }
-
-      const conversationId = `${TENANT_ID}_${phone}`;
-
-      const result = await refreshChat({
-        conversationId,
-        phone,
-        limit: 10,
-      });
-
-      return res.status(200).json({
-        ok: true,
-        ...result,
-      });
-    } catch (err) {
-      console.error("Erro refresh chat:", err);
-      return res.status(500).send("error");
-    }
-  });
-});
-
-/**
- * =========================================
- * 4️⃣ FUNÇÃO INTERNA refreshChat (NO INDEX)
- * =========================================
- */
-async function refreshChat({
-  conversationId,
-  phone,
-  limit = 10,
-  maxTotal = 100,
-}) {
-  const chatid = `${phone}@s.whatsapp.net`;
-
-  let allMessages = [];
-  let offset = 0;
-
-  while (allMessages.length < maxTotal) {
-    const { data } = await axios.post(
-      `${UAZAPI_BASE_URL}/message/find`,
-      {
-        chatid,
-        limit,
-        offset,
-      },
-      {
-        headers: {
-          token: INSTANCE_TOKEN,
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    const messages = data?.messages || [];
-
-    if (messages.length === 0) break;
-
-    allMessages = allMessages.concat(messages);
-    offset = data.nextOffset ?? offset + limit;
-
-    if (messages.length < limit) break;
-
-    console.log("UAZAPI FETCH", {
-      offset,
-      count: messages.length,
-      firstId: messages[0]?.id,
-      lastId: messages[messages.length - 1]?.id,
-    });
-  }
-
-  let saved = 0;
-
-  for (const msg of allMessages) {
-    if (!msg.id) continue;
-
-    const messageRef = db.collection("messages").doc(msg.id);
-    const exists = await messageRef.get();
-    if (exists.exists) continue;
-
-    const from = msg.fromMe ? "agent" : "client";
-    const text = msg.text || msg.content?.text || msg.content?.caption || "";
-
-    await messageRef.set({
-      conversationId,
-      tenantId: conversationId.split("_")[0],
-      from,
-      phone,
-      text,
-      type: msg.messageType || "text",
-      senderName: msg.senderName || null,
-      senderPhoto: null,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      timestamp: msg.messageTimestamp
-        ? new Date(msg.messageTimestamp)
-        : admin.firestore.FieldValue.serverTimestamp(),
-      source: "uazapi-refresh",
-    });
-
-    saved++;
-  }
-
-  return {
-    saved,
-    returned: allMessages.length,
-  };
-}
-
-exports.syncChatsFromUazapi = onRequest(async (req, res) => {
-  try {
-    const TENANT_ID = "zapcore-dev";
-
-    let offset = 0;
-    const limit = 50;
-    let total = 0;
-
-    while (true) {
-      const { data } = await axios.post(
-        `${UAZAPI_BASE_URL}/chat/find`,
-        { limit, offset },
-        { headers: { token: INSTANCE_TOKEN } },
-      );
-
-      const chats = data?.chats || [];
-      if (!chats.length) break;
-
-      for (const chat of chats) {
-        const phone = chat.phone?.replace(/\D/g, "");
-        if (!phone) continue;
-
-        const convId = `${TENANT_ID}_${phone}`;
-        const convRef = db.collection("conversations").doc(convId);
-        const snap = await convRef.get();
-
-        const payload = {
-          id: convId,
-          phone,
-          tenantId: TENANT_ID,
-          importedFrom: "uazapi-chat-find",
-          historyComplete: false,
-          lastMessage: chat.wa_lastMessage || null,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        };
-
-        if (!snap.exists) {
-          await convRef.set({
-            ...payload,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          });
-          total++;
-        } else {
-          await convRef.update(payload);
-        }
-      }
-
-      if (!data.pagination?.hasNextPage) break;
-      offset += limit;
-    }
-
-    return res.json({ ok: true, imported: total });
-  } catch (err) {
-    console.error("syncChats error:", err);
     return res.status(500).send("error");
   }
 });
