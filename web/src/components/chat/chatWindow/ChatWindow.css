@@ -143,6 +143,8 @@
   outline: none;
   padding: 10px;
   background: transparent;
+  color: #666;
+  font-family: "Poppins";
 }
 
 .send-btn {

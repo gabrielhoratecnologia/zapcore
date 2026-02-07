@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+
 .conversation-item {
   display: flex;
   align-items: center;
@@ -7,6 +9,7 @@
   border-bottom: 1px solid #f0f2f5;
   background-color: #ffffff;
   position: relative;
+  font-family: "Poppins";
 }
 
 /* Estado de Fila */
@@ -66,7 +69,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
 }
 
 .chat-name {
