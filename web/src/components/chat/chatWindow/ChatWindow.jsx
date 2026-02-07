@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { FaSmile, FaPaperPlane, FaInfoCircle, FaSync } from "react-icons/fa";
+import {
+  FaSmile,
+  FaPaperPlane,
+  FaInfoCircle,
+  FaComments,
+} from "react-icons/fa";
 import EmojiPicker, { EmojiStyle } from "emoji-picker-react";
 import DOMPurify from "dompurify";
 import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
@@ -141,7 +146,17 @@ const ChatWindow = ({
   if (!chat) {
     return (
       <div className="chat-placeholder">
-        <h2>Selecione uma conversa</h2>
+        <div className="placeholder-content">
+          <div className="placeholder-icon">
+            <FaComments />
+          </div>
+          <h2>Sua Central de Atendimento</h2>
+          <p>
+            Selecione uma conversa na lista lateral para visualizar o histórico
+            de mensagens e detalhes do evento.
+          </p>
+          <div className="placeholder-divider"></div>
+        </div>
       </div>
     );
   }

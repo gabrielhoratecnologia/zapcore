@@ -114,7 +114,6 @@
   outline: none; 
   color: var(--color-text);
   transition: border-color 0.2s;
-  
 }
 
 .search-container input:focus {
