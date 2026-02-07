@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { FaSmile, FaPaperPlane, FaInfoCircle, FaSync } from "react-icons/fa";
-import EmojiPicker, { EmojiStyle, Categories } from "emoji-picker-react";
+import EmojiPicker, { EmojiStyle } from "emoji-picker-react";
 import DOMPurify from "dompurify";
 import { useChatDetails } from "../../../hooks/useChatDetails.jsx";
-import axios from "axios";
 import "./ChatWindow.css";
 
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
@@ -17,7 +16,6 @@ const formatWhatsAppText = (text) => {
   return DOMPurify.sanitize(rawHtml);
 };
 
-// -------- NOVO: Helpers de data --------
 const isSameDay = (d1, d2) =>
   d1.getFullYear() === d2.getFullYear() &&
   d1.getMonth() === d2.getMonth() &&
@@ -37,7 +35,6 @@ const getDayLabel = (date) => {
     year: "numeric",
   });
 };
-// --------------------------------------
 
 const ChatWindow = ({
   chat,
@@ -45,7 +42,6 @@ const ChatWindow = ({
   loadLastMessages,
   listenNewMessages,
   loadOlderMessages,
-  refreshFromUazapi,
   sendMessage,
 }) => {
   const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
@@ -56,38 +52,25 @@ const ChatWindow = ({
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const [tempBrideName, setTempBrideName] = useState("");
   const [tempWeddingDate, setTempWeddingDate] = useState("");
   const [newNoteText, setNewNoteText] = useState("");
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
 
   const emojiPickerRef = useRef(null);
   const messagesEndRef = useRef(null);
-  const detailsRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const listenerRef = useRef(null);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const [year, month, day] = dateStr.split("-");
+    return `${day}.${month}.${year}`;
+  };
 
   const { details, updateGeneralDetails, addNote, loading } = useChatDetails(
     chat?.id,
   );
-
-  const handleLoadOlder = async () => {
-    if (isLoadingOlder) return;
-
-    setIsLoadingOlder(true);
-    try {
-      if (!messages.length) {
-        // 🔥 primeira vez = força refresh
-        await refreshFromUazapi(chat);
-        await loadLastMessages(chat.id, chat);
-      } else {
-        await loadOlderMessages(chat.id, messagesContainerRef);
-      }
-    } finally {
-      setIsLoadingOlder(false);
-    }
-  };
 
   useEffect(() => {
     setTempBrideName(details.brideName || "");
@@ -100,11 +83,8 @@ const ChatWindow = ({
 
   useEffect(() => {
     if (!chat?.id) return;
-
     loadLastMessages(chat.id);
   }, [chat?.id]);
-
-  const listenerRef = useRef(null);
 
   useEffect(() => {
     if (!chat?.id) return;
@@ -112,7 +92,6 @@ const ChatWindow = ({
       listenerRef.current();
       listenerRef.current = null;
     }
-
     const unsubscribe = listenNewMessages(chat.id);
     listenerRef.current = unsubscribe;
 
@@ -145,6 +124,20 @@ const ChatWindow = ({
     setShowDetails(false);
   };
 
+  const handleLoadOlder = async () => {
+    if (isLoadingOlder) return;
+    setIsLoadingOlder(true);
+    try {
+      if (!messages.length) {
+        await loadLastMessages(chat.id, chat);
+      } else {
+        await loadOlderMessages(chat.id, messagesContainerRef);
+      }
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
+
   if (!chat) {
     return (
       <div className="chat-placeholder">
@@ -160,51 +153,87 @@ const ChatWindow = ({
       {/* HEADER */}
       <div className="chat-active-header">
         <img
-          src={chat.pho || initialsAvatar}
+          src={chat.photo || initialsAvatar}
           alt=""
           className="header-avatar"
           onError={(e) => (e.target.src = defaultAvatar)}
         />
-
         <div className="header-info">
           <h4>
             {details.brideName || chat.name}{" "}
-            {details.weddingDate || chat.weddingDate}
+            {details.weddingDate && ` | ${formatDate(details.weddingDate)}`}
           </h4>
         </div>
-
         <div className="header-actions">
           <button
-            className="info-trigger-btn"
-            onClick={() => setShowDetails(!showDetails)}
+            className={`info-trigger-btn ${showDetails ? "active" : ""}`}
+            onClick={() => {
+              setShowDetails(!showDetails);
+              setShowEmojiPicker(false);
+            }}
           >
             <FaInfoCircle />
           </button>
         </div>
       </div>
 
-      {/* MENSAGENS */}
-      <div className="chat-messages-list" ref={messagesContainerRef}>
-        {/* BOTÃO CARREGAR MAIS */}
-        <div className="load-older-wrapper">
-          <button
-            className="load-older-btn"
-            onClick={handleLoadOlder}
-            disabled={isLoadingOlder}
-          >
-            {isLoadingOlder ? (
-              <>
-                <FaSync className="load-older-spinner" />
-                Carregando...
-              </>
-            ) : (
-              "Carregar mensagens anteriores"
-            )}
+      {/* MODAL DE DETALHES (CORREÇÃO: Adicionado aqui) */}
+      {showDetails && (
+        <div className="details-popover">
+          <h3>Detalhes do Cliente</h3>
+          <div className="details-field">
+            <label>Nome do Contato</label>
+            <input
+              type="text"
+              value={tempBrideName}
+              onChange={(e) => setTempBrideName(e.target.value)}
+              placeholder="Ex: Maria Silva"
+            />
+          </div>
+          <div className="details-field">
+            <label>Data do Evento</label>
+            <input
+              type="date"
+              value={tempWeddingDate}
+              onChange={(e) => setTempWeddingDate(e.target.value)}
+            />
+          </div>
+          <div className="details-field">
+            <label>Nova Nota</label>
+            <textarea
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              placeholder="Digite uma observação..."
+              rows={3}
+            />
+          </div>
+
+          {details.notes && details.notes.length > 0 && (
+            <div className="notes-section">
+              <label>Histórico de Notas</label>
+              <div className="notes-history">
+                {details.notes.map((note, i) => (
+                  <div key={i} className="note-item">
+                    <div className="note-content">{note.text || note}</div>
+                    {note.createdAt && (
+                      <span className="note-date">{note.createdAt}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button className="save-details-btn" onClick={handleSaveDetails}>
+            Salvar Alterações
           </button>
         </div>
+      )}
 
+      {/* MENSAGENS */}
+      <div className="chat-messages-list" ref={messagesContainerRef}>
         {messages.map((msg, idx) => {
-          const msgDate = msg.timestamp?.toDate();
+          const msgDate = msg.timestamp?.toDate ? msg.timestamp.toDate() : null;
           let showDateSeparator = false;
 
           if (msgDate) {
@@ -223,9 +252,7 @@ const ChatWindow = ({
               )}
 
               <div
-                className={`msg-row ${
-                  msg.from === MESSAGE_FROM.AGENT ? "sent" : "received"
-                }`}
+                className={`msg-row ${msg.from === MESSAGE_FROM.AGENT ? "sent" : "received"}`}
               >
                 <div className="msg-bubble">
                   <p
@@ -244,7 +271,6 @@ const ChatWindow = ({
             </div>
           );
         })}
-
         <div ref={messagesEndRef} />
       </div>
 
@@ -255,23 +281,23 @@ const ChatWindow = ({
             <EmojiPicker
               onEmojiClick={onEmojiClick}
               emojiStyle={EmojiStyle.NATIVE}
-              autoFocusSearch={false}
               width="350px"
               height="400px"
               previewConfig={{ showPreview: false }}
             />
           </div>
         )}
-
         <div className="input-area-floating">
           <button
             type="button"
             className={`emoji-trigger-btn ${showEmojiPicker ? "active" : ""}`}
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowDetails(false);
+            }}
           >
             <FaSmile />
           </button>
-
           <form className="message-form" onSubmit={handleSendMessage}>
             <input
               type="text"
@@ -280,6 +306,9 @@ const ChatWindow = ({
               onChange={(e) => setNewMessage(e.target.value)}
             />
           </form>
+          <button className="send-btn" onClick={handleSendMessage}>
+            <FaPaperPlane />
+          </button>
         </div>
       </footer>
     </div>
