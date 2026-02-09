@@ -15,10 +15,13 @@ const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
 const formatWhatsAppText = (text) => {
   if (typeof text !== "string") return "";
   if (!text) return "";
+  console.log(text);
   const rawHtml = text
     .replace(/\*(.*?)\*/g, "<b>$1</b>")
     .replace(/_(.*?)_/g, "<i>$1</i>")
-    .replace(/~(.*?)~/g, "<strike>$1</strike>");
+    .replace(/~(.*?)~/g, "<strike>$1</strike>")
+    .replace(/\n/g, "<br/>");
+
   return DOMPurify.sanitize(rawHtml);
 };
 
@@ -116,10 +119,8 @@ const ChatWindow = ({
   const handleInputChange = (e) => {
     const element = e.target;
     setNewMessage(element.value);
-
-    // Reseta a altura para calcular o novo scrollHeight
+    console.log(newMessage);
     element.style.height = "auto";
-    // Define a nova altura baseada no conteúdo
     element.style.height = `${element.scrollHeight}px`;
   };
 
@@ -140,20 +141,6 @@ const ChatWindow = ({
       setNewNoteText("");
     }
     setShowDetails(false);
-  };
-
-  const handleLoadOlder = async () => {
-    if (isLoadingOlder) return;
-    setIsLoadingOlder(true);
-    try {
-      if (!messages.length) {
-        await loadLastMessages(chat.id, chat);
-      } else {
-        await loadOlderMessages(chat.id, messagesContainerRef);
-      }
-    } finally {
-      setIsLoadingOlder(false);
-    }
   };
 
   if (!chat) {
@@ -326,7 +313,7 @@ const ChatWindow = ({
           >
             <FaSmile />
           </button>
-          <form className="message-form" onSubmit={handleSendMessage}>
+          <form className="message-form">
             <textarea
               rows={"1"}
               type="text"
@@ -335,7 +322,6 @@ const ChatWindow = ({
               onChange={handleInputChange}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
                   handleSendMessage();
                 }
               }}
