@@ -113,12 +113,24 @@ const ChatWindow = ({
     setNewMessage((prev) => prev + emojiData.emoji);
   };
 
+  const handleInputChange = (e) => {
+    const element = e.target;
+    setNewMessage(element.value);
+
+    // Reseta a altura para calcular o novo scrollHeight
+    element.style.height = "auto";
+    // Define a nova altura baseada no conteúdo
+    element.style.height = `${element.scrollHeight}px`;
+  };
+
   const handleSendMessage = async (e) => {
     e?.preventDefault();
     if (!newMessage.trim()) return;
     await sendMessage(chat, newMessage);
     setNewMessage("");
     setShowEmojiPicker(false);
+    const textarea = document.querySelector(".message-form textarea");
+    if (textarea) textarea.style.height = "auto";
   };
 
   const handleSaveDetails = async () => {
@@ -315,11 +327,18 @@ const ChatWindow = ({
             <FaSmile />
           </button>
           <form className="message-form" onSubmit={handleSendMessage}>
-            <input
+            <textarea
+              rows={"1"}
               type="text"
               placeholder="Digite uma mensagem"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
             />
           </form>
           <button className="send-btn" onClick={handleSendMessage}>

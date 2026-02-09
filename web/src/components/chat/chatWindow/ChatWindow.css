@@ -99,10 +99,12 @@
 }
 
 .sent .msg-bubble {
+  text-align: end;
   background-color: #dcf8c6;
   border-top-right-radius: 0;
 }
 .received .msg-bubble {
+  text-align: start;
   background-color: #ffffff;
   border-top-left-radius: 0;
 }
@@ -125,18 +127,37 @@
 
 .input-area-floating {
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Mantém ícones na base se o campo crescer */
   background-color: #ffffff;
-  padding: 5px 15px;
+  padding: 8px 12px;
   border-radius: 24px;
-
   width: 100%;
   max-width: 1000px;
+  min-height: 45px;
 }
-
 .message-form {
   flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0 8px;
 }
+
+.message-form textarea {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 8px 2px;
+  background: transparent;
+  color: #666;
+  font-family: "Poppins", sans-serif;
+  font-size: 15px;
+  resize: none; /* Impede o usuário de puxar o canto */
+  overflow: hidden; /* Remove o scroll feio */
+  line-height: 1.4;
+  min-height: 24px;
+  max-height: 150px;
+}
+
 .message-form input {
   width: 100%;
   border: none;
@@ -152,7 +173,16 @@
   border: none;
   color: var(--color-primary);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.send-btn:hover {
+  transform: scale(1.1);
 }
 
 /* --- MODAL DE DETALHES --- */
