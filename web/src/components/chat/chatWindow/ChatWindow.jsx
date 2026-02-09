@@ -13,6 +13,7 @@ import "./ChatWindow.css";
 const MESSAGE_FROM = { AGENT: "agent", CLIENT: "client" };
 
 const formatWhatsAppText = (text) => {
+  if (typeof text !== "string") return "";
   if (!text) return "";
   const rawHtml = text
     .replace(/\*(.*?)\*/g, "<b>$1</b>")
